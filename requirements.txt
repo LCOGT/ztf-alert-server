@@ -1,0 +1,5 @@
+flask
+flask-sqlalchemy
+geoalchemy2
+python-dateutil
+psycopg2
