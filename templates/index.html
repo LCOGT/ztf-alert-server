@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+
+    <title>ZTF Archive - Las Cumbres Observatory</title>
+  </head>
+  <body>
+    <main role="main" class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <h2>ZTF Archive - Las Cumbres Observatory</h2>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-10">
+          {% if context.has_prev %}
+          <a href="/?{{ arg_str }}&page={{ page - 1 }}" class="btn btn-primary">Prev</a>
+          {% else %}
+          <a href="#" class="btn btn-primary disabled">Prev</a>
+          {% endif %}
+          {% if context.has_next %}
+          <a href="/?{{ arg_str }}&page={{ page + 1 }}" class="btn btn-primary">Next</a>
+          {% else %}
+          <a href="#" class="btn btn-primary disabled">Next</a>
+          {% endif %}
+          Results: {{ context.total }} Pages: {{ context.pages }}
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>ObjectId</th>
+                <th>Jd</th>
+                <th>RA/Dec</th>
+                <th>Mag</th>
+                <th>R/B</th>
+                <th>S/G</th>
+                <th>S/N</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for alert in context.results %}
+              <tr>
+                <td>{{ alert.objectId }}</td>
+                <td>{{ alert.candidate.jd }}</td>
+                <td>{{ alert.candidate.ra|round(4, 'floor') }} / {{ alert.candidate.dec|round(4, 'floor') }}</td>
+                <td>{{ alert.candidate.magpsf|round(5, 'floor') }}</td>
+                <td>{{ alert.candidate.rb|round(3, 'floor') }}</td>
+                <td>{{ alert.candidate.classtar|round(3, 'floor') }}</td>
+                <td>{{ alert.candidate.scorr|round(5, 'floor') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="col-md-2">
+          <form method="GET" action="/">
+            <div class="form-group">
+              <label for="objectId">ObjectId</label>
+              <input type="text" class="form-control form-control-sm" id="objectId" name="objectId" value="{{ request.args.objectId }}">
+            </div>
+            <div class="form-group">
+              <label for="cone">Cone Search</label>
+              <input type="text" class="form-control form-control-sm" id="cone" name="cone" value="{{ request.args.cone }}">
+              <small class="form-text text-muted">Format: ra,dec,degrees.</small>
+            </div>
+            <div class="form-group">
+              <label for="objectidps">Nearby Objects</label>
+              <input type="text" class="form-control form-control-sm" id="objectidps" name="objectidps" value="{{ request.args.objectidps }}">
+              <small class="form-text text-muted">ID from PS1 catalog.</small>
+            </div>
+            <div class="form-group">
+              <label for="ra__gt">RA &gt; </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="ra__gt" name="ra__gt" value="{{ request.args.ra__gt }}">
+              <small class="form-text text-muted">Degrees</small>
+            </div>
+            <div class="form-group">
+              <label for="ra__lt">RA &lt; </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="ra__lt" name="ra__lt" value="{{ request.args.ra__lt }}">
+              <small class="form-text text-muted">Degrees</small>
+            </div>
+            <div class="form-group">
+              <label for="dec__gt">Dec &gt; </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="dec__gt" name="dec__gt" value="{{ request.args.dec__gt }}">
+              <small class="form-text text-muted">Degrees</small>
+            </div>
+            <div class="form-group">
+              <label for="dec__lt">Dec &lt; </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="dec__lt" name="dec__lt" value="{{ request.args.dec__lt}}">
+              <small class="form-text text-muted">Degrees</small>
+            </div>
+            <div class="form-group">
+              <label for="jd__gt">JD &gt; </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="jd__gt" name="jd__gt" value="{{ request.args.jd__gt }}">
+              <small class="form-text text-muted">Degrees</small>
+            </div>
+            <div class="form-group">
+              <label for="jd__lt">JD &lt; </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="jd__lt" name="jd__lt" value="{{ request.args.jd__lt }}">
+            </div>
+            <div class="form-group">
+              <label for="magpsf__lte">Magpsf &lt;=</label>
+              <input type="number" step="any" class="form-control form-control-sm" id="magpsf__lte" name="magpsf__lte" value="{{ request.args.magpsf__lte }}">
+            </div>
+            <div class="form-group">
+              <label for="sigmapsf__lte">Sigmapsf &lt;= </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="sigmapsf__lte" name="sigmapsf__lte" value="{{ request.args.sigmapsf__lte }}">
+            </div>
+            <div class="form-group">
+              <label for="rb__gte">R/B &gt;= </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="rb__gte" name="rb__gte" value="{{ request.args.rb__gte }}">
+            </div>
+            <div class="form-group">
+              <label for="classtar__gte">Classtar &gt;= </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="classtar__gte" name="classtar__gte" value="{{ request.args.classtar__gte }}">
+            </div>
+            <div class="form-group">
+              <label for="classtar__lte">Classtar &lt;= </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="classtar__lte" name="classtar__lte" value="{{ request.args.classtar__lte }}">
+            </div>
+            <div class="form-group">
+              <label for="fwhm__lte">FWHM &lt;= </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="fwhm__lte" name="fwhm__lte" value="{{ request.args.fwhm__lte }}">
+            </div>
+            <div class="form-group">
+              <label for="scorr__gte">Scorr &gt;= </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="scorr__gte" name="scorr__gte" value="{{ request.args.scorr__gte }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="/" class="btn btn-secondary">Reset</a>
+          </form>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

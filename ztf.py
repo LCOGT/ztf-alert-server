@@ -1,9 +1,8 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 from geoalchemy2 import Geography, Geometry
-from datetime import datetime
 from sqlalchemy import cast
-from dateutil.parser import parse as parse_date
+from urllib.parse import urlencode
 import math
 import json
 
@@ -28,7 +27,7 @@ class Alert(db.Model):
     objectId = db.Column(db.String(50), index=True)
     alert_candid = db.Column(db.BigInteger, nullable=True, default=None)
 
-    jd = db.Column(db.DateTime, nullable=False, index=True)
+    jd = db.Column(db.Float, nullable=False, index=True)
     fid = db.Column(db.Integer, nullable=False)
     pid = db.Column(db.BigInteger, nullable=False)
     diffmaglim = db.Column(db.Float, nullable=True, default=None)
@@ -116,6 +115,17 @@ class Alert(db.Model):
     nframesref = db.Column(db.Integer, nullable=False)
 
     @property
+    def ra(self):
+        ra = db.session.scalar(cast(self.location, Geometry).ST_X())
+        if ra < 0:
+            ra = ra + 360
+        return ra
+
+    @property
+    def dec(self):
+        return db.session.scalar(cast(self.location, Geometry).ST_Y())
+
+    @property
     def serialized(self):
         return {
             'objectId': self.objectId,
@@ -138,8 +148,8 @@ class Alert(db.Model):
                 'field': self.field,
                 'xpos': self.xpos,
                 'ypos': self.ypos,
-                'ra': db.session.scalar(cast(Alert.location, Geometry).ST_X()),
-                'dec': db.session.scalar(cast(Alert.location, Geometry).ST_Y()),
+                'ra': self.ra,
+                'dec': self.dec,
                 'location': json.loads(db.session.scalar(self.location.ST_AsGeoJSON())),
                 'magpsf': self.magpsf,
                 'sigmapsf': self.sigmapsf,
@@ -229,11 +239,17 @@ def apply_filters(query, request):
 
     # Return alerts with an RA greater than a given value in degrees. Ex: ?ra__gt=20
     if request.args.get('ra__gt'):
-        query = query.filter(cast(Alert.location, Geometry).ST_X() > float(request.args['ra__gt']))
+        ra = float(request.args['ra__gt'])
+        if ra > 180:
+            ra = ra - 360
+        query = query.filter(cast(Alert.location, Geometry).ST_X() > ra)
 
     # Return alerts with an RA less than a given value in degrees. Ex: ?ra__lt=20
     if request.args.get('ra__lt'):
-        query = query.filter(cast(Alert.location, Geometry).ST_X() < float(request.args['ra__lt']))
+        ra = float(request.args['ra__lt'])
+        if ra > 180:
+            ra = ra - 360
+        query = query.filter(cast(Alert.location, Geometry).ST_X() < ra)
 
     # Return alerts with an Dec greater than a given value in degrees. Ex: ?dec__gt=20
     if request.args.get('dec__gt'):
@@ -243,13 +259,13 @@ def apply_filters(query, request):
     if request.args.get('dec__lt'):
         query = query.filter(cast(Alert.location, Geometry).ST_Y() < float(request.args['dec__lt']))
 
-    # Return alerts with a JD after given date. Ex: ?jd__gt=2018-07-17 22:32:03
+    # Return alerts with a JD after given date. Ex: ?jd__gt=2458302.6906713
     if request.args.get('jd__gt'):
-        query = query.filter(Alert.jd > parse_date(request.args['jd__gt']))
+        query = query.filter(Alert.jd > request.args['jd__gt'])
 
-    # Return alerts with a JD prevous to a given date. Ex: ?jd__lt=2018-07-17 22:32:03
+    # Return alerts with a JD prevous to a given date. Ex: ?jd__lt=2458302.6906713
     if request.args.get('jd__lt'):
-        query = query.filter(Alert.jd < parse_date(request.args['jd__lt']))
+        query = query.filter(Alert.jd < request.args['jd__lt'])
 
     # Return alerts with a brightness greater than the given value. Ex: ?magpsf__lt=20
     if request.args.get('magpsf__lte'):
@@ -269,7 +285,7 @@ def apply_filters(query, request):
 
     # Return alerts with a start/galaxy score less or equal to the given value. Ex: ?clastar__lte=0.4
     if request.args.get('classtar__lte'):
-        query = query.filter(Alert.classtar <= float(request.args['classtar__gte']))
+        query = query.filter(Alert.classtar <= float(request.args['classtar__lte']))
 
     # Return alerts with a fwhm less than the given value. Ex: ?fwhm__lte=1.123
     if request.args.get('fwhm__lte'):
@@ -279,63 +295,44 @@ def apply_filters(query, request):
     if request.args.get('scorr__gte'):
         query = query.filter(Alert.scorr >= float(request.args['scorr__gte']))
 
+    if request.args.get('objectId'):
+        query = query.filter(Alert.objectId == request.args['objectId'])
+
     # Search for alerts near a PS1 object ID. Ex: ?objectidps=178183210973037920
     if request.args.get('objectidps'):
         psid = int(request.args['objectidps'])
         query = query.filter((Alert.objectidps1 == psid) | (Alert.objectidps2 == psid) | (Alert.objectidps3 == psid))
     return query
 
+def request_wants_json():
+    best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
+    return best == 'application/json' and \
+        request.accept_mimetypes[best] > \
+        request.accept_mimetypes['text/html']
 
-@app.route('/alerts/')
+
+@app.route('/')
 def alerts():
     page = request.args.get('page', 1, type=int)
     query = db.session.query(Alert)
-    query = apply_filters(query, request)
+    query = apply_filters(query, request).order_by(Alert.jd.desc())
 
-    alerts = Alert.serialize_list(query.paginate(page, 20, True).items)
-    return jsonify(alerts)
+    paginator = query.paginate(page, 20, True)
+    response = {
+        'total': paginator.total,
+        'pages': paginator.pages,
+        'has_next': paginator.has_next,
+        'has_prev': paginator.has_prev,
+        'results': Alert.serialize_list(paginator.items)
 
-
-if __name__ == '__main__':
-    import random
-    import string
-    db.create_all()
-
-    for x in range(50):
-        objectId = ''.join([random.choice(string.ascii_letters) for i in range(10)])
-        ra = random.choice(range(360))
-        dec = random.choice(range(-90, 90))
-        location = f'srid=4035;POINT({ra} {dec})'
-        alert = Alert(
-            objectId=objectId,
-            location=location,
-            jd=datetime.now(),
-            magpsf=random.choice(range(100)),
-            sigmapsf=random.choice(range(100)),
-            rb=random.choice(range(100)),
-            classtar=random.choice(range(100)),
-            scorr=random.choice(range(100)),
-            fid=random.choice(range(3)),
-            isdiffpos=random.choice(('t', 'f')),
-            pid=random.choice(range(200000)),
-            programid=random.choice(range(3)),
-            nmtchps=random.choice(range(20)),
-            rfid=random.choice(range(100000)),
-            jdstartref=random.choice(range(9879)),
-            jdendref=random.choice(range(20302)),
-            nframesref=random.choice(range(20)),
-            ranr=random.choice(range(12312)),
-            decnr=random.choice(range(32123)),
-            ndethist=random.choice(range(12312)),
-            ncovhist=random.choice(range(1232)),
-            objectidps1=1234,
-            objectidps2=4321,
-            objectidps3=1122
-        )
-        db.session.add(alert)
-    db.session.commit()
-
-    query = db.session.query(Alert).filter(Alert.location.ST_DWithin('srid=4035;POINT(6 6)', degrees_to_meters(90))).all()
-    print(query)
-    query = db.session.query(Alert).filter(cast(Alert.location, Geometry).ST_X() > 2).all()
-    print(query[0].serialized)
+    }
+    if request_wants_json() or request.args.get('format', 'html', type=str) == 'json':
+        return jsonify(response)
+    else:
+        args = request.args.copy()
+        try:
+            args.pop('page')
+        except KeyError:
+            pass
+        arg_str = urlencode(args)
+        return render_template('index.html', context=response, page=paginator.page, arg_str=arg_str)
