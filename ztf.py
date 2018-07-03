@@ -14,6 +14,7 @@ SRID for normal sphere: https://epsg.io/4035
 
 """
 EARTH_RADIUS_METERS = 6371008.77141506
+PRV_CANDIDATES_RADIUS = 0.000277778
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:postgres@localhost:5432/ztf'
@@ -126,13 +127,21 @@ class Alert(db.Model):
         return db.session.scalar(cast(self.location, Geometry).ST_Y())
 
     @property
-    def serialized(self):
-        return {
+    def prv_candidate(self):
+        point = db.session.scalar(self.location.ST_AsText())
+        query = db.session.query(Alert).filter(
+            Alert.id != self.id,
+            Alert.location.ST_DWithin(f'srid=4035;{point}', degrees_to_meters(PRV_CANDIDATES_RADIUS))
+        )
+        return query.order_by(Alert.jd.desc())
+
+    def serialized(self, prv_candidate=False):
+        alert = {
+            'lco_id': self.id,
             'objectId': self.objectId,
             'publisher': self.publisher,
             'candid': self.alert_candid,
             'candidate': {
-
                 'jd': self.jd,
                 'fid': self.fid,
                 'pid': self.pid,
@@ -218,10 +227,13 @@ class Alert(db.Model):
                 'nframesref': self.nframesref,
             }
         }
+        if prv_candidate:
+            alert['prv_candidate'] = Alert.serialize_list(self.prv_candidate)
+        return alert
 
     @staticmethod
     def serialize_list(alerts):
-        return [alert.serialized for alert in alerts]
+        return [alert.serialized() for alert in alerts]
 
     def __str__(self):
         return self.objectId
@@ -235,7 +247,9 @@ def apply_filters(query, request):
     # Perfom a cone search. Paramter is comma seperated ra, dec origin and radius to search. Ex: ?cone=23,29,0.5
     if request.args.get('cone'):
         ra, dec, radius = request.args['cone'].split(',')
-        query = query.filter(Alert.location.ST_DWithin(f'srid=4035;POINT({ra} {dec})', degrees_to_meters(float(radius))))
+        query = query.filter(
+            Alert.location.ST_DWithin(f'srid=4035;POINT({ra} {dec})', degrees_to_meters(float(radius)))
+        )
 
     # Return alerts with an RA greater than a given value in degrees. Ex: ?ra__gt=20
     if request.args.get('ra__gt'):
@@ -304,11 +318,18 @@ def apply_filters(query, request):
         query = query.filter((Alert.objectidps1 == psid) | (Alert.objectidps2 == psid) | (Alert.objectidps3 == psid))
     return query
 
+
 def request_wants_json():
     best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
     return best == 'application/json' and \
         request.accept_mimetypes[best] > \
         request.accept_mimetypes['text/html']
+
+
+@app.route('/<int:id>/')
+def alert_detail(id):
+    alert = db.session.query(Alert).get(id)
+    return jsonify(alert.serialized(prv_candidate=True))
 
 
 @app.route('/')
@@ -317,7 +338,7 @@ def alerts():
     query = db.session.query(Alert)
     query = apply_filters(query, request).order_by(Alert.jd.desc())
 
-    paginator = query.paginate(page, 20, True)
+    paginator = query.paginate(page, 50, True)
     response = {
         'total': paginator.total,
         'pages': paginator.pages,

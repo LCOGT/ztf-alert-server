@@ -15,6 +15,13 @@
       <div class="row">
         <div class="col-md-12">
           <h2>ZTF Archive - Las Cumbres Observatory</h2>
+          <p>
+            The following table lists ZTF alerts in descending order by JD. Use the filters on the right to narrow down
+            the results to interesting candidates. When the results look good, add <code>?format=json</code> to the url. You can
+            now access this url to retrieve the full data and use it in your scripts.
+            You can access an alert's previous alerts by vising <code>/&lt;lco_id&gt;/</code> where lco_id is the value
+            of the lco_id key in the json view or by clicking the objectId link in the table.
+          </p>
         </div>
       </div>
       <div class="row">
@@ -45,7 +52,7 @@
             <tbody>
               {% for alert in context.results %}
               <tr>
-                <td>{{ alert.objectId }}</td>
+                <td><a href="/{{ alert.lco_id }}/" title="{{ alert.lco_id }}">{{ alert.objectId }}</a></td>
                 <td>{{ alert.candidate.jd }}</td>
                 <td>{{ alert.candidate.ra|round(4, 'floor') }} / {{ alert.candidate.dec|round(4, 'floor') }}</td>
                 <td>{{ alert.candidate.magpsf|round(5, 'floor') }}</td>
