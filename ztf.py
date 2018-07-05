@@ -14,7 +14,7 @@ SRID for normal sphere: https://epsg.io/4035
 
 """
 EARTH_RADIUS_METERS = 6371008.77141506
-PRV_CANDIDATES_RADIUS = 0.000277778
+PRV_CANDIDATES_RADIUS = 0.000416667 # 1.5 arc seconds, same that ztf uses.
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:postgres@localhost:5432/ztf'
@@ -241,6 +241,11 @@ class Alert(db.Model):
     def serialize_list(alerts):
         return [alert.serialized() for alert in alerts]
 
+    @property
+    def pretty_serialized(self):
+        return json.dumps(self.serialized(prv_candidate=True), indent=2)
+
+
     def __str__(self):
         return self.objectId
 
@@ -346,16 +351,22 @@ def apply_filters(query, request):
 
 
 def request_wants_json():
-    best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
-    return best == 'application/json' and \
-        request.accept_mimetypes[best] > \
-        request.accept_mimetypes['text/html']
+    if request.args.get('format', 'html', type=str) == 'json':
+        return True
+    else:
+        best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
+        return best == 'application/json' and \
+            request.accept_mimetypes[best] > \
+            request.accept_mimetypes['text/html']
 
 
 @app.route('/<int:id>/')
 def alert_detail(id):
     alert = db.session.query(Alert).get(id)
-    return jsonify(alert.serialized(prv_candidate=True))
+    if request_wants_json():
+        return jsonify(alert.serialized(prv_candidate=True))
+    else:
+        return render_template('detail.html', alert=alert)
 
 
 @app.route('/')
@@ -373,7 +384,7 @@ def alerts():
         'results': Alert.serialize_list(paginator.items)
 
     }
-    if request_wants_json() or request.args.get('format', 'html', type=str) == 'json':
+    if request_wants_json():
         return jsonify(response)
     else:
         args = request.args.copy()
