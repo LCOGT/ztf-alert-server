@@ -42,11 +42,12 @@
               <tr>
                 <th>ObjectId</th>
                 <th>Jd</th>
-                <th>RA/Dec</th>
-                <th>Mag</th>
-                <th>R/B</th>
-                <th>S/G</th>
-                <th>S/N</th>
+                <th title="degrees">RA/Dec</th>
+                <th title="magnitude">Mag</th>
+                <th title="Diff in magnitude from previous alert">Mag Diff</th>
+                <th title="Real/Bogus score">R/B</th>
+                <th title="Star/Galaxy score">S/G</th>
+                <th title="Signal/Noise ratio">S/N</th>
               </tr>
             </thead>
             <tbody>
@@ -54,8 +55,9 @@
               <tr>
                 <td><a href="/{{ alert.lco_id }}/" title="{{ alert.lco_id }}">{{ alert.objectId }}</a></td>
                 <td>{{ alert.candidate.jd }}</td>
-                <td>{{ alert.candidate.ra|round(4, 'floor') }} / {{ alert.candidate.dec|round(4, 'floor') }}</td>
-                <td>{{ alert.candidate.magpsf|round(5, 'floor') }}</td>
+                <td>{{ alert.candidate.ra|round(3, 'floor') }} / {{ alert.candidate.dec|round(3, 'floor') }}</td>
+                <td>{{ alert.candidate.magpsf|round(3, 'floor') }}</td>
+                <td>{{ alert.candidate.latest_mag_diff|round(3, 'floor') if alert.candidate.latest_mag_diff }}</td>
                 <td>{{ alert.candidate.rb|round(3, 'floor') }}</td>
                 <td>{{ alert.candidate.classtar|round(3, 'floor') }}</td>
                 <td>{{ alert.candidate.scorr|round(5, 'floor') }}</td>
@@ -116,6 +118,11 @@
             <div class="form-group">
               <label for="sigmapsf__lte">Sigmapsf &lt;= </label>
               <input type="number" step="any" class="form-control form-control-sm" id="sigmapsf__lte" name="sigmapsf__lte" value="{{ request.args.sigmapsf__lte }}">
+            </div>
+            <div class="form-group">
+              <label for="latest_mag_diff__gte">Latest Mag Diff &gt;= </label>
+              <input type="number" step="any" class="form-control form-control-sm" id="latest_mag_diff__gte" name="latest_mag_diff__gte" value="{{ request.args.latest_mag_diff__gte }}">
+              <small class="form-text text-muted">Absolute Value</small>
             </div>
             <div class="form-group">
               <label for="rb__gte">R/B &gt;= </label>

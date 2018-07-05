@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 from geoalchemy2 import Geography, Geometry
-from sqlalchemy import cast
+from sqlalchemy import cast, func
 from urllib.parse import urlencode
 import math
 import json
@@ -46,6 +46,7 @@ class Alert(db.Model):
     location = db.Column(Geography('POINT', srid=4035), nullable=False, index=True)
     magpsf = db.Column(db.Float, nullable=False, index=True)
     sigmapsf = db.Column(db.Float, nullable=False, index=True)
+    latest_mag_diff = db.Column(db.Float, nullable=True, default=None, index=True)
     chipsf = db.Column(db.Float, nullable=True, default=None)
     magap = db.Column(db.Float, nullable=True, default=None)
     sigmagap = db.Column(db.Float, nullable=True, default=None)
@@ -84,6 +85,8 @@ class Alert(db.Model):
     jdendhist = db.Column(db.Float, nullable=True, default=None)
     scorr = db.Column(db.Float, nullable=True, index=True)
     tooflag = db.Column(db.SmallInteger, nullable=False, default=0)
+    gal_l = db.Column(db.Float, nullable=False, index=True)
+    gal_b = db.Column(db.Float, nullable=False, index=True)
 
     objectidps1 = db.Column(db.BigInteger, nullable=True, default=None, index=True)
     sgmag1 = db.Column(db.Float, nullable=True, default=None)
@@ -159,9 +162,12 @@ class Alert(db.Model):
                 'ypos': self.ypos,
                 'ra': self.ra,
                 'dec': self.dec,
+                'l': self.gal_l,
+                'b': self.gal_b,
                 'location': json.loads(db.session.scalar(self.location.ST_AsGeoJSON())),
                 'magpsf': self.magpsf,
                 'sigmapsf': self.sigmapsf,
+                'latest_mag_diff': self.latest_mag_diff,
                 'chipsf': self.chipsf,
                 'magap': self.magap,
                 'sigmagap': self.sigmagap,
@@ -273,6 +279,22 @@ def apply_filters(query, request):
     if request.args.get('dec__lt'):
         query = query.filter(cast(Alert.location, Geometry).ST_Y() < float(request.args['dec__lt']))
 
+    # Return alerts with galactic l greater than a given value in degrees. Ex: ?l__gt=20
+    if request.args.get('l__gt'):
+        query = query.filter(Alert.gal_l > float(request.args['l__gt']))
+
+    # Return alerts with galactic l less than a given value in degrees. Ex: ?l__lt=20
+    if request.args.get('l__lt'):
+        query = query.filter(Alert.gal_l < float(request.args['l__lt']))
+
+    # Return alerts with galactic b greater than a given value in degrees. Ex: ?b__gt=20
+    if request.args.get('b__gt'):
+        query = query.filter(Alert.gal_b > float(request.args['b__gt']))
+
+    # Return alerts with galactic b less than a given value in degrees. Ex: ?b__lt=20
+    if request.args.get('b__lt'):
+        query = query.filter(Alert.gal_b < float(request.args['b__lt']))
+
     # Return alerts with a JD after given date. Ex: ?jd__gt=2458302.6906713
     if request.args.get('jd__gt'):
         query = query.filter(Alert.jd > request.args['jd__gt'])
@@ -288,6 +310,10 @@ def apply_filters(query, request):
     # Return alerts with a brightness uncertainty less than the given value. Ex: ?sigmapsf__lte=0.4
     if request.args.get('sigmapsf__lte'):
         query = query.filter(Alert.sigmapsf <= float(request.args['sigmapsf__lte']))
+
+    # Return alerts with a magnitude difference greater than the given value (abs value). Ex: ?latest_mag_diff__gte=1
+    if request.args.get('latest_mag_diff__gte'):
+        query = query.filter(func.abs(Alert.latest_mag_diff) > float(request.args['latest_mag_diff__gte']))
 
     # Return alerts with a real/bogus score greater or equal to the given value. Ex: ?rb__gte=0.3
     if request.args.get('rb__gte'):
