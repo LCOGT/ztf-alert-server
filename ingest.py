@@ -16,23 +16,25 @@ def ingest_avro(avro):
         c = SkyCoord(ra, dec, unit='deg')
         galactic = c.galactic
 
-        latest_mag_diff = None
+        deltamaglatest = None
         if packet['prv_candidates']:
             prv_candidates = sorted(packet['prv_candidates'], key=lambda x: x['jd'], reverse=True)
             for candidate in prv_candidates:
-                if packet['candidate']['fid'] == candidate['fid']:
-                    if not candidate['magpsf']:
-                        latest_mag_diff = packet['candidate']['magpsf'] - candidate['diffmaglim']
-                    else:
-                        latest_mag_diff = packet['candidate']['magpsf'] - candidate['magpsf']
+                if packet['candidate']['fid'] == candidate['fid'] and candidate['magpsf']:
+                    deltamaglatest = packet['candidate']['magpsf'] - candidate['magpsf']
                     break
+
+        deltamagref = None
+        if packet['candidate']['distnr'] < 2:
+            deltamagref = packet['candidate']['magnr'] - packet['candidate']['magpsf']
 
         alert = Alert(
             objectId=packet['objectId'],
             publisher=packet.get('publisher', ''),
             alert_candid=packet['candid'],
             location=location,
-            latest_mag_diff=latest_mag_diff,
+            deltamaglatest=deltamaglatest,
+            deltamagref=deltamagref,
             gal_l=galactic.l.value,
             gal_b=galactic.b.value,
             **packet['candidate']

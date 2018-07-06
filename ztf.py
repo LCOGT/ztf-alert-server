@@ -47,7 +47,8 @@ class Alert(db.Model):
     location = db.Column(Geography('POINT', srid=4035), nullable=False, index=True)
     magpsf = db.Column(db.Float, nullable=False, index=True)
     sigmapsf = db.Column(db.Float, nullable=False, index=True)
-    latest_mag_diff = db.Column(db.Float, nullable=True, default=None, index=True)
+    deltamaglatest = db.Column(db.Float, nullable=True, default=None, index=True)
+    deltamagref = db.Column(db.Float, nullable=True, default=None, index=True)
     chipsf = db.Column(db.Float, nullable=True, default=None)
     magap = db.Column(db.Float, nullable=True, default=None, index=True)
     sigmagap = db.Column(db.Float, nullable=True, default=None)
@@ -169,7 +170,8 @@ class Alert(db.Model):
                 'location': json.loads(db.session.scalar(self.location.ST_AsGeoJSON())),
                 'magpsf': self.magpsf,
                 'sigmapsf': self.sigmapsf,
-                'latest_mag_diff': self.latest_mag_diff,
+                'deltamaglatest': self.deltamaglatest,
+                'deltamagref': self.deltamagref,
                 'chipsf': self.chipsf,
                 'magap': self.magap,
                 'distnr': self.distnr,
@@ -333,9 +335,13 @@ def apply_filters(query, request):
     if request.args.get('distnr__lte'):
         query = query.filter(Alert.distnr <= float(request.args['distnr__lte']))
 
-    # Return alerts with a magnitude difference greater than the given value (abs value). Ex: ?latest_mag_diff__gte=1
-    if request.args.get('latest_mag_diff__gte'):
-        query = query.filter(func.abs(Alert.latest_mag_diff) > float(request.args['latest_mag_diff__gte']))
+    # Return alerts with a magnitude difference greater than the given value (abs value). Ex: ?deltamaglatest__gte=1
+    if request.args.get('deltamaglatest__gte'):
+        query = query.filter(func.abs(Alert.deltamaglatest) > float(request.args['deltamaglatest__gte']))
+
+    # Return alerts with a mag diff on the reference image greater than the given value. Ex: ?deltamagref__gte=1
+    if request.args.get('deltamagref__gte'):
+        query = query.filter(Alert.deltamagref > float(request.args['deltamagref__gte']))
 
     # Return alerts with a real/bogus score greater or equal to the given value. Ex: ?rb__gte=0.3
     if request.args.get('rb__gte'):
@@ -391,7 +397,7 @@ def alerts():
     query = db.session.query(Alert)
     query = apply_filters(query, request).order_by(Alert.jd.desc())
 
-    paginator = query.paginate(page, 50, True)
+    paginator = query.paginate(page, 100, True)
     response = {
         'total': paginator.total,
         'pages': paginator.pages,

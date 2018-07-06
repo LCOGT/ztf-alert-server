@@ -31,11 +31,13 @@
           <th>ObjectId</th>
           <th>Jd</th>
           <th>fid</th>
-          <th title="degrees">RA/Dec</th>
-          <th title="magnitude">Mag</th>
+          <th title="degrees">RA</th>
+          <th title="degrees">Dec</th>
+          <th title="magnitude">Magpsf</th>
           <th title="magap">Magap</th>
           <th title="distnr">Distnr</th>
-          <th title="Diff in magnitude from previous alert">Mag Diff</th>
+          <th title="Diff in magnitude from previous alert">Δ Mag</th>
+          <th title="">Δ Mag Ref</th>
           <th title="Real/Bogus score">R/B</th>
           <th title="Star/Galaxy score">S/G</th>
         </tr>
@@ -46,13 +48,15 @@
           <td><a href="/{{ alert.lco_id }}/" title="{{ alert.lco_id }}">{{ alert.objectId }}</a></td>
           <td>{{ alert.candidate.jd }}</td>
           <td>{{ alert.candidate.filter }}</td>
-          <td>{{ alert.candidate.ra|round(3, 'floor') }} / {{ alert.candidate.dec|round(3, 'floor') }}</td>
-          <td>{{ alert.candidate.magpsf|round(3, 'floor') }}</td>
-          <td>{{ alert.candidate.magap|round(3, 'floor') }}</td>
-          <td>{{ alert.candidate.distnr|round(3, 'floor') }}</td>
-          <td>{{ alert.candidate.latest_mag_diff|round(3, 'floor') if alert.candidate.latest_mag_diff }}</td>
-          <td>{{ alert.candidate.rb|round(3, 'floor') }}</td>
-          <td>{{ alert.candidate.classtar|round(3, 'floor') }}</td>
+          <td>{{ '%.3f'|format(alert.candidate.ra) }}</td>
+          <td>{{ '%.3f'|format(alert.candidate.dec) }}</td>
+          <td>{{ '%.3f'|format(alert.candidate.magpsf) }}</td>
+          <td>{{ '%.3f'|format(alert.candidate.magap) }}</td>
+          <td>{{ '%.3f'|format(alert.candidate.distnr) }}</td>
+          <td>{{ '%.3f'|format(alert.candidate.deltamaglatest) if alert.candidate.deltamaglatest }}</td>
+          <td>{{ '%.3f'|format(alert.candidate.deltamagref) if alert.candidate.deltamagref }}</td>
+          <td>{{ '%.3f'|format(alert.candidate.rb) }}</td>
+          <td>{{ '%.3f'|format(alert.candidate.classtar) }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -90,7 +94,7 @@
       <div class="form-group">
         <label for="cone">Cone Search</label>
         <input type="text" class="form-control form-control-sm" id="cone" name="cone" value="{{ request.args.cone }}">
-        <small class="form-text text-muted">Format: ra,dec,degrees.</small>
+        <small class="form-text text-muted">Format: ra,dec,radius in degrees.</small>
       </div>
       <div class="form-group">
         <label for="objectidps">Nearby Objects</label>
@@ -164,9 +168,13 @@
         <input type="number" step="any" class="form-control form-control-sm" id="distnr__lte" name="distnr__lte" value="{{ request.args.distnr__lte }}">
       </div>
       <div class="form-group">
-        <label for="latest_mag_diff__gte">Latest Mag Diff &gt;= </label>
-        <input type="number" step="any" class="form-control form-control-sm" id="latest_mag_diff__gte" name="latest_mag_diff__gte" value="{{ request.args.latest_mag_diff__gte }}">
+        <label for="deltamaglatest__gte">Delta Mag &gt;= </label>
+        <input type="number" step="any" class="form-control form-control-sm" id="deltamaglatest__gte" name="deltamaglatest__gte" value="{{ request.args.deltamaglatest__gte }}">
         <small class="form-text text-muted">Absolute Value</small>
+      </div>
+      <div class="form-group">
+        <label for="deltamagref__gte">Delta Mag Ref &gt;= </label>
+        <input type="number" step="any" class="form-control form-control-sm" id="deltamagref__gte" name="deltamagref__gte" value="{{ request.args.deltamagref__gte }}">
       </div>
       <div class="form-group">
         <label for="rb__gte">R/B &gt;= </label>
