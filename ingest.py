@@ -56,3 +56,10 @@ if __name__ == '__main__':
     db.create_all()
     filename = sys.argv[1]
     read_avros(filename)
+
+"""
+Write out decompressed fits image from avro:
+
+with open('/tmp/' + packet['cutoutScience']['fileName'], 'wb') as f:
+    f.write(gzip.open(io.BytesIO(packet['cutoutScience']['stampData'])).read())
+"""
