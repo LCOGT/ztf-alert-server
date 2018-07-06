@@ -5,6 +5,7 @@ from sqlalchemy import cast, func
 from urllib.parse import urlencode
 import math
 import json
+import os
 
 """
 Convert degrees to meters so we can use geography type:
@@ -14,11 +15,16 @@ SRID for normal sphere: https://epsg.io/4035
 
 """
 EARTH_RADIUS_METERS = 6371008.77141506
-PRV_CANDIDATES_RADIUS = 0.000416667 # 1.5 arc seconds, same that ztf uses.
+PRV_CANDIDATES_RADIUS = 0.000416667  # 1.5 arc seconds, same that ztf uses.
 FILTERS = ['g', 'r', 'i']
 
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_USER = os.getenv('DB_USER', 'postgres')
+DB_PASS = os.getenv('DB_PASS', 'postgres')
+DB_NAME = os.getenv('DB_NAME', 'ztf')
+
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:postgres@localhost:5432/ztf'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 

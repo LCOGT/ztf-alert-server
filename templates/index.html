@@ -21,13 +21,13 @@
       <li><strong>filter</strong>: (derived) Filter name (g, r, i) derived from <strong>fid</strong> (1, 2, 3).</li>
       <li><strong>ra</strong>: Right Ascension of candidate; J2000 [deg]</li>
       <li><strong>dec</strong>: Declination of candidate; J2000 [deg]</li>
-      <li><strong>magpsf</strong>: Magnitude from PSF-fit photometry [mag]</li>
-      <li><strong>magpap</strong>: Aperture mag using 8 pixel diameter aperture [mag]</li>
-      <li><strong>distnr</strong>: Distance to nearest source in reference image PSF-catalog within 30 arcsec [pixels]</li>
+      <li><strong>magpsf</strong>: Magnitude from PSF-fit photometry measured from difference image [mag]</li>
+      <li><strong>magpap</strong>: Aperture mag using 8 pixel diameter aperture measured from difference image [mag]</li>
+      <li><strong>distnr</strong>: Distance to nearest source in reference image PSF-catalog within 30 arcsec (1 pixel = 1.0 arcsecond) [pixels]</li>
       <li><strong>deltamaglatest</strong>: (Derived) magpsf[this alert] - magpsf[last alert at this location from image of same filter] if a previous alert is available, otherwise Null.</li>
       <li><strong>deltamagref</strong>: (Derived) If distnr &lt; 2” (~2 ZTF pixels), deltamagref = (magnr - magpsf), otherwise Null.</li>
       <li><strong>rb</strong>: RealBogus quality score; range is 0 to 1 where closer to 1 is more reliable.</li>
-      <li><strong>classtar</strong>: Star/Galaxy classification score from SExtractor.</li>
+      <li><strong>classtar</strong>: Star/Galaxy classification score from SExtractor measured from the difference image.</li>
     </ul>
   </div>
 </div>
