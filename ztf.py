@@ -15,6 +15,7 @@ SRID for normal sphere: https://epsg.io/4035
 """
 EARTH_RADIUS_METERS = 6371008.77141506
 PRV_CANDIDATES_RADIUS = 0.000416667 # 1.5 arc seconds, same that ztf uses.
+FILTERS = ['g', 'r', 'i']
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:postgres@localhost:5432/ztf'
@@ -26,7 +27,7 @@ class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     publisher = db.Column(db.String(200), nullable=False, default='')
     objectId = db.Column(db.String(50), index=True)
-    alert_candid = db.Column(db.BigInteger, nullable=True, default=None)
+    alert_candid = db.Column(db.BigInteger, nullable=True, default=None, index=True)
 
     jd = db.Column(db.Float, nullable=False, index=True)
     fid = db.Column(db.Integer, nullable=False)
@@ -48,7 +49,7 @@ class Alert(db.Model):
     sigmapsf = db.Column(db.Float, nullable=False, index=True)
     latest_mag_diff = db.Column(db.Float, nullable=True, default=None, index=True)
     chipsf = db.Column(db.Float, nullable=True, default=None)
-    magap = db.Column(db.Float, nullable=True, default=None)
+    magap = db.Column(db.Float, nullable=True, default=None, index=True)
     sigmagap = db.Column(db.Float, nullable=True, default=None)
     distnr = db.Column(db.Float, nullable=True, default=None)
     magnr = db.Column(db.Float, nullable=True, default=None)
@@ -71,7 +72,7 @@ class Alert(db.Model):
     nbad = db.Column(db.Integer, nullable=True, default=None)
     rb = db.Column(db.Float, nullable=True, default=None, index=True)
     rbversion = db.Column(db.String(200), nullable=False, default='')
-    ssdistnr = db.Column(db.Float, nullable=True, default=None)
+    ssdistnr = db.Column(db.Float, nullable=True, default=None, index=True)
     ssmagnr = db.Column(db.Float, nullable=True, default=None)
     ssnamenr = db.Column(db.String(200), nullable=False, default='')
     sumrat = db.Column(db.Float, nullable=True, default=None)
@@ -83,7 +84,7 @@ class Alert(db.Model):
     ncovhist = db.Column(db.Integer, nullable=False)
     jdstarthist = db.Column(db.Float, nullable=True, default=None)
     jdendhist = db.Column(db.Float, nullable=True, default=None)
-    scorr = db.Column(db.Float, nullable=True, index=True)
+    scorr = db.Column(db.Float, nullable=True)
     tooflag = db.Column(db.SmallInteger, nullable=False, default=0)
     gal_l = db.Column(db.Float, nullable=False, index=True)
     gal_b = db.Column(db.Float, nullable=False, index=True)
@@ -147,6 +148,7 @@ class Alert(db.Model):
             'candidate': {
                 'jd': self.jd,
                 'fid': self.fid,
+                'filter': self.filter,
                 'pid': self.pid,
                 'diffmaglim': self.diffmaglim,
                 'pdiffimfilename': self.pdiffimfilename,
@@ -170,6 +172,7 @@ class Alert(db.Model):
                 'latest_mag_diff': self.latest_mag_diff,
                 'chipsf': self.chipsf,
                 'magap': self.magap,
+                'distnr': self.distnr,
                 'sigmagap': self.sigmagap,
                 'magnr': self.magnr,
                 'sigmagnr': self.sigmagnr,
@@ -245,6 +248,9 @@ class Alert(db.Model):
     def pretty_serialized(self):
         return json.dumps(self.serialized(prv_candidate=True), indent=2)
 
+    @property
+    def filter(self):
+        return FILTERS[self.fid - 1]
 
     def __str__(self):
         return self.objectId
@@ -308,6 +314,9 @@ def apply_filters(query, request):
     if request.args.get('jd__lt'):
         query = query.filter(Alert.jd < request.args['jd__lt'])
 
+    if request.args.get('filter'):
+        query = query.filter(Alert.fid == FILTERS.index(request.args['filter']) + 1)
+
     # Return alerts with a brightness greater than the given value. Ex: ?magpsf__lt=20
     if request.args.get('magpsf__lte'):
         query = query.filter(Alert.magpsf <= float(request.args['magpsf__lte']))
@@ -315,6 +324,14 @@ def apply_filters(query, request):
     # Return alerts with a brightness uncertainty less than the given value. Ex: ?sigmapsf__lte=0.4
     if request.args.get('sigmapsf__lte'):
         query = query.filter(Alert.sigmapsf <= float(request.args['sigmapsf__lte']))
+
+    # Return alerts with a magnitude of object in difference image less than value. ex: ?magap__lte=0.4
+    if request.args.get('magap__lte'):
+        query = query.filter(Alert.magap <= float(request.args['magap__lte']))
+
+    # Return alerts where the distance to the nearest source is less than value. ex: ?distnr__lte=1.0
+    if request.args.get('distnr__lte'):
+        query = query.filter(Alert.distnr <= float(request.args['distnr__lte']))
 
     # Return alerts with a magnitude difference greater than the given value (abs value). Ex: ?latest_mag_diff__gte=1
     if request.args.get('latest_mag_diff__gte'):
@@ -336,12 +353,11 @@ def apply_filters(query, request):
     if request.args.get('fwhm__lte'):
         query = query.filter(Alert.fwhm <= float(request.args['fwhm__lte']))
 
-    # Return alerts with a signal to noise ratio grater than the given value. Ex: ?scorr__gte=25
-    if request.args.get('scorr__gte'):
-        query = query.filter(Alert.scorr >= float(request.args['scorr__gte']))
-
     if request.args.get('objectId'):
         query = query.filter(Alert.objectId == request.args['objectId'])
+
+    if request.args.get('candid'):
+        query = query.filter(Alert.alert_candid == request.args['candid'])
 
     # Search for alerts near a PS1 object ID. Ex: ?objectidps=178183210973037920
     if request.args.get('objectidps'):

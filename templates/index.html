@@ -25,17 +25,19 @@
     <a href="#" class="btn btn-primary disabled">Next</a>
     {% endif %}
     Results: {{ context.total }} Pages: {{ context.pages }}
-    <table class="table table-striped">
+    <table class="table table-striped table-sm">
       <thead>
         <tr>
           <th>ObjectId</th>
           <th>Jd</th>
+          <th>fid</th>
           <th title="degrees">RA/Dec</th>
           <th title="magnitude">Mag</th>
+          <th title="magap">Magap</th>
+          <th title="distnr">Distnr</th>
           <th title="Diff in magnitude from previous alert">Mag Diff</th>
           <th title="Real/Bogus score">R/B</th>
           <th title="Star/Galaxy score">S/G</th>
-          <th title="Signal/Noise ratio">S/N</th>
         </tr>
       </thead>
       <tbody>
@@ -43,12 +45,14 @@
         <tr>
           <td><a href="/{{ alert.lco_id }}/" title="{{ alert.lco_id }}">{{ alert.objectId }}</a></td>
           <td>{{ alert.candidate.jd }}</td>
+          <td>{{ alert.candidate.filter }}</td>
           <td>{{ alert.candidate.ra|round(3, 'floor') }} / {{ alert.candidate.dec|round(3, 'floor') }}</td>
           <td>{{ alert.candidate.magpsf|round(3, 'floor') }}</td>
+          <td>{{ alert.candidate.magap|round(3, 'floor') }}</td>
+          <td>{{ alert.candidate.distnr|round(3, 'floor') }}</td>
           <td>{{ alert.candidate.latest_mag_diff|round(3, 'floor') if alert.candidate.latest_mag_diff }}</td>
           <td>{{ alert.candidate.rb|round(3, 'floor') }}</td>
           <td>{{ alert.candidate.classtar|round(3, 'floor') }}</td>
-          <td>{{ alert.candidate.scorr|round(5, 'floor') }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -60,6 +64,29 @@
         <label for="objectId">ObjectId</label>
         <input type="text" class="form-control form-control-sm" id="objectId" name="objectId" value="{{ request.args.objectId }}">
       </div>
+      <div class="form-group">
+        <label for="candid">candid</label>
+        <input type="text" class="form-control form-control-sm" id="candid" name="candid" value="{{ request.args.candid }}">
+      </div>
+      <div class="form-group">
+        <label for="jd__gt">JD &gt; </label>
+        <input type="number" step="any" class="form-control form-control-sm" id="jd__gt" name="jd__gt" value="{{ request.args.jd__gt }}">
+        <small class="form-text text-muted">Degrees</small>
+      </div>
+      <div class="form-group">
+        <label for="jd__lt">JD &lt; </label>
+        <input type="number" step="any" class="form-control form-control-sm" id="jd__lt" name="jd__lt" value="{{ request.args.jd__lt }}">
+      </div>
+      <div class="form-group">
+        <label for="filter">Filter</label>
+        <select id="filter" name="filter" class="form-control form-control-sm" value="{{ request.args.filter }}">
+          <option value="" {% if request.args.filter == '' %} selected {% endif %}></option>
+          <option value="g" {% if request.args.filter == 'g' %} selected {% endif %}>g</option>
+          <option value="r" {% if request.args.filter == 'r' %} selected {% endif %}>r</option>
+          <option value="i" {% if request.args.filter == 'i' %} selected {% endif %}>i</option>
+        </select>
+      </div>
+
       <div class="form-group">
         <label for="cone">Cone Search</label>
         <input type="text" class="form-control form-control-sm" id="cone" name="cone" value="{{ request.args.cone }}">
@@ -121,21 +148,20 @@
       </div>
 
       <div class="form-group">
-        <label for="jd__gt">JD &gt; </label>
-        <input type="number" step="any" class="form-control form-control-sm" id="jd__gt" name="jd__gt" value="{{ request.args.jd__gt }}">
-        <small class="form-text text-muted">Degrees</small>
-      </div>
-      <div class="form-group">
-        <label for="jd__lt">JD &lt; </label>
-        <input type="number" step="any" class="form-control form-control-sm" id="jd__lt" name="jd__lt" value="{{ request.args.jd__lt }}">
-      </div>
-      <div class="form-group">
         <label for="magpsf__lte">Magpsf &lt;=</label>
         <input type="number" step="any" class="form-control form-control-sm" id="magpsf__lte" name="magpsf__lte" value="{{ request.args.magpsf__lte }}">
       </div>
       <div class="form-group">
         <label for="sigmapsf__lte">Sigmapsf &lt;= </label>
         <input type="number" step="any" class="form-control form-control-sm" id="sigmapsf__lte" name="sigmapsf__lte" value="{{ request.args.sigmapsf__lte }}">
+      </div>
+      <div class="form-group">
+        <label for="magap__lte">Magap &lt;=</label>
+        <input type="number" step="any" class="form-control form-control-sm" id="magap__lte" name="magap__lte" value="{{ request.args.magap__lte }}">
+      </div>
+      <div class="form-group">
+        <label for="distnr__lte">Distnr &lt;=</label>
+        <input type="number" step="any" class="form-control form-control-sm" id="distnr__lte" name="distnr__lte" value="{{ request.args.distnr__lte }}">
       </div>
       <div class="form-group">
         <label for="latest_mag_diff__gte">Latest Mag Diff &gt;= </label>
@@ -157,10 +183,6 @@
       <div class="form-group">
         <label for="fwhm__lte">FWHM &lt;= </label>
         <input type="number" step="any" class="form-control form-control-sm" id="fwhm__lte" name="fwhm__lte" value="{{ request.args.fwhm__lte }}">
-      </div>
-      <div class="form-group">
-        <label for="scorr__gte">Scorr &gt;= </label>
-        <input type="number" step="any" class="form-control form-control-sm" id="scorr__gte" name="scorr__gte" value="{{ request.args.scorr__gte }}">
       </div>
       <button type="submit" class="btn btn-primary">Filter</button>
       <a href="/" class="btn btn-secondary">Reset</a>
