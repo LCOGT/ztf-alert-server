@@ -72,15 +72,17 @@
         <label for="candid">candid</label>
         <input type="text" class="form-control form-control-sm" id="candid" name="candid" value="{{ request.args.candid }}">
       </div>
-      <div class="form-group">
-        <label for="jd__gt">JD &gt; </label>
-        <input type="number" step="any" class="form-control form-control-sm" id="jd__gt" name="jd__gt" value="{{ request.args.jd__gt }}">
-        <small class="form-text text-muted">Degrees</small>
+
+      <label for="jd__gt">JD</label>
+      <div class="form-row">
+        <div class="col">
+          <input type="number" step="any" class="form-control form-control-sm" id="jd__gt" name="jd__gt" value="{{ request.args.jd__gt }}" placeholder="Lower">
+        </div>
+        <div class="col">
+           <input type="number" step="any" class="form-control form-control-sm" id="jd__lt" name="jd__lt" value="{{ request.args.jd__lt }}" placeholder="Upper">
+        </div>
       </div>
-      <div class="form-group">
-        <label for="jd__lt">JD &lt; </label>
-        <input type="number" step="any" class="form-control form-control-sm" id="jd__lt" name="jd__lt" value="{{ request.args.jd__lt }}">
-      </div>
+
       <div class="form-group">
         <label for="filter">Filter</label>
         <select id="filter" name="filter" class="form-control form-control-sm" value="{{ request.args.filter }}">
@@ -105,49 +107,49 @@
 
       <!-- Equatorial coords -->
       <div id="equatorial_coords">
-        <div class="form-group">
-          <label for="ra__gt">RA &gt; </label>
-          <input type="number" step="any" class="form-control form-control-sm" id="ra__gt" name="ra__gt" value="{{ request.args.ra__gt }}">
-          <small class="form-text text-muted">Degrees</small>
+        <p>Equatorial Coords</p>
+        <label for="ra__gt">RA</label>
+        <div class="form-row">
+          <div class="col">
+            <input type="number" step="any" class="form-control form-control-sm" id="ra__gt" name="ra__gt" value="{{ request.args.ra__gt }}" placeholder="Lower">
+          </div>
+          <div class="col">
+             <input type="number" step="any" class="form-control form-control-sm" id="ra__lt" name="ra__lt" value="{{ request.args.ra__lt }}" placeholder="Upper">
+          </div>
         </div>
-        <div class="form-group">
-          <label for="ra__lt">RA &lt; </label>
-          <input type="number" step="any" class="form-control form-control-sm" id="ra__lt" name="ra__lt" value="{{ request.args.ra__lt }}">
-          <small class="form-text text-muted">Degrees</small>
-        </div>
-        <div class="form-group">
-          <label for="dec__gt">Dec &gt; </label>
-          <input type="number" step="any" class="form-control form-control-sm" id="dec__gt" name="dec__gt" value="{{ request.args.dec__gt }}">
-          <small class="form-text text-muted">Degrees</small>
-        </div>
-        <div class="form-group">
-          <label for="dec__lt">Dec &lt; </label>
-          <input type="number" step="any" class="form-control form-control-sm" id="dec__lt" name="dec__lt" value="{{ request.args.dec__lt}}">
-          <small class="form-text text-muted">Degrees</small>
+
+        <label for="dec__gt">Dec</label>
+        <div class="form-row">
+          <div class="col">
+            <input type="number" step="any" class="form-control form-control-sm" id="dec__gt" name="dec__gt" value="{{ request.args.dec__gt }}" placeholder="Lower">
+          </div>
+          <div class="col">
+             <input type="number" step="any" class="form-control form-control-sm" id="dec__lt" name="dec__lt" value="{{ request.args.dec__lt }}" placeholder="Upper">
+          </div>
         </div>
       </div>
 
       <!-- galactic coords -->
       <div id="galactic_coords">
-        <div class="form-group">
-          <label for="l__gt">l &gt; </label>
-          <input type="number" step="any" class="form-control form-control-sm" id="l__gt" name="l__gt" value="{{ request.args.l__gt }}">
-          <small class="form-text text-muted">Degrees</small>
+        <p>Galactic Coords</p>
+        <label for="l__gt">l</label>
+        <div class="form-row">
+          <div class="col">
+            <input type="number" step="any" class="form-control form-control-sm" id="l__gt" name="l__gt" value="{{ request.args.l__gt }}" placeholder="Lower">
+          </div>
+          <div class="col">
+             <input type="number" step="any" class="form-control form-control-sm" id="l__lt" name="l__lt" value="{{ request.args.l__lt }}" placeholder="Upper">
+          </div>
         </div>
-        <div class="form-group">
-          <label for="l__lt">l &lt; </label>
-          <input type="number" step="any" class="form-control form-control-sm" id="l__lt" name="l__lt" value="{{ request.args.l__lt }}">
-          <small class="form-text text-muted">Degrees</small>
-        </div>
-        <div class="form-group">
-          <label for="b__gt">b &gt; </label>
-          <input type="number" step="any" class="form-control form-control-sm" id="b__gt" name="b__gt" value="{{ request.args.b__gt }}">
-          <small class="form-text text-muted">Degrees</small>
-        </div>
-        <div class="form-group">
-          <label for="b__lt">b &lt; </label>
-          <input type="number" step="any" class="form-control form-control-sm" id="b__lt" name="b__lt" value="{{ request.args.b__lt}}">
-          <small class="form-text text-muted">Degrees</small>
+
+        <label for="b__gt">b</label>
+        <div class="form-row">
+          <div class="col">
+            <input type="number" step="any" class="form-control form-control-sm" id="b__gt" name="b__gt" value="{{ request.args.b__gt }}" placeholder="Lower">
+          </div>
+          <div class="col">
+             <input type="number" step="any" class="form-control form-control-sm" id="b__lt" name="b__lt" value="{{ request.args.b__lt }}" placeholder="Upper">
+          </div>
         </div>
       </div>
 
@@ -175,18 +177,20 @@
       <div class="form-group">
         <label for="deltamagref__gte">Delta Mag Ref &gt;= </label>
         <input type="number" step="any" class="form-control form-control-sm" id="deltamagref__gte" name="deltamagref__gte" value="{{ request.args.deltamagref__gte }}">
+        <small class="form-text text-muted">Absolute Value</small>
       </div>
       <div class="form-group">
         <label for="rb__gte">R/B &gt;= </label>
         <input type="number" step="any" class="form-control form-control-sm" id="rb__gte" name="rb__gte" value="{{ request.args.rb__gte }}">
       </div>
-      <div class="form-group">
-        <label for="classtar__gte">Classtar &gt;= </label>
-        <input type="number" step="any" class="form-control form-control-sm" id="classtar__gte" name="classtar__gte" value="{{ request.args.classtar__gte }}">
-      </div>
-      <div class="form-group">
-        <label for="classtar__lte">Classtar &lt;= </label>
-        <input type="number" step="any" class="form-control form-control-sm" id="classtar__lte" name="classtar__lte" value="{{ request.args.classtar__lte }}">
+      <label for="classtar__gt">Classtar</label>
+      <div class="form-row">
+        <div class="col">
+          <input type="number" step="any" class="form-control form-control-sm" id="classtar__gt" name="classtar__gt" value="{{ request.args.classtar__gt }}" placeholder="Lower">
+        </div>
+        <div class="col">
+           <input type="number" step="any" class="form-control form-control-sm" id="classtar__lt" name="classtar__lt" value="{{ request.args.classtar__lt }}" placeholder="Upper">
+        </div>
       </div>
       <div class="form-group">
         <label for="fwhm__lte">FWHM &lt;= </label>

@@ -341,7 +341,7 @@ def apply_filters(query, request):
 
     # Return alerts with a mag diff on the reference image greater than the given value. Ex: ?deltamagref__gte=1
     if request.args.get('deltamagref__gte'):
-        query = query.filter(Alert.deltamagref > float(request.args['deltamagref__gte']))
+        query = query.filter(func.abs(Alert.deltamagref) > float(request.args['deltamagref__gte']))
 
     # Return alerts with a real/bogus score greater or equal to the given value. Ex: ?rb__gte=0.3
     if request.args.get('rb__gte'):
