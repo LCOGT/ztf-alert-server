@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy import cast, func
 from urllib.parse import urlencode
+from astropy.time import Time
 import math
 import json
 import os
@@ -17,6 +18,7 @@ SRID for normal sphere: https://epsg.io/4035
 EARTH_RADIUS_METERS = 6371008.77141506
 PRV_CANDIDATES_RADIUS = 0.000416667  # 1.5 arc seconds, same that ztf uses.
 FILTERS = ['g', 'r', 'i']
+S3_URL = 'https://s3-us-west-2.amazonaws.com/ztf-alert.lco.global/'
 
 DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_USER = os.getenv('DB_USER', 'postgres')
@@ -126,6 +128,10 @@ class Alert(db.Model):
     jdendref = db.Column(db.Float, nullable=False)
     nframesref = db.Column(db.Integer, nullable=False)
 
+    cutoutScienceFileName = db.Column(db.String(200), nullable=True, default=None)
+    cutoutTemplateFileName = db.Column(db.String(200), nullable=True, default=None)
+    cutoutDifferenceFileName = db.Column(db.String(200), nullable=True, default=None)
+
     @property
     def ra(self):
         ra = db.session.scalar(cast(self.location, Geometry).ST_X())
@@ -145,6 +151,35 @@ class Alert(db.Model):
             Alert.location.ST_DWithin(f'srid=4035;{point}', degrees_to_meters(PRV_CANDIDATES_RADIUS))
         )
         return query.order_by(Alert.jd.desc())
+
+    @property
+    def wall_time(self):
+        t = Time(self.jd, format='jd')
+        return t.datetime
+
+    @property
+    def wall_time_format(self):
+        return '{0}/{1}/{2}'.format(
+            self.wall_time.year, str(self.wall_time.month).zfill(2), str(self.wall_time.day).zfill(2)
+        )
+
+    @property
+    def cutoutScience(self):
+        return '{0}{1}/{2}'.format(
+            S3_URL, self.wall_time_format, self.cutoutScienceFileName
+        )
+
+    @property
+    def cutoutTemplate(self):
+        return '{0}{1}/{2}'.format(
+            S3_URL, self.wall_time_format, self.cutoutTemplateFileName
+        )
+
+    @property
+    def cutoutDifference(self):
+        return '{0}{1}/{2}'.format(
+            S3_URL, self.wall_time_format, self.cutoutDifferenceFileName
+        )
 
     def serialized(self, prv_candidate=False):
         alert = {
@@ -242,6 +277,9 @@ class Alert(db.Model):
                 'jdstartref': self.jdstartref,
                 'jdendref': self.jdendref,
                 'nframesref': self.nframesref,
+                'cutoutScience': self.cutoutScience,
+                'cutoutTemplate': self.cutoutTemplate,
+                'cutoutDifference': self.cutoutDifference
             }
         }
         if prv_candidate:

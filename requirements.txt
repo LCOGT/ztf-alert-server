@@ -4,3 +4,4 @@ geoalchemy2
 psycopg2-binary
 fastavro
 astropy
+boto3
