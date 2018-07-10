@@ -5,3 +5,4 @@ psycopg2-binary
 fastavro
 astropy
 boto3
+requests

@@ -6,6 +6,7 @@ import io
 import boto3
 import os
 import logging
+import requests
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 
@@ -85,15 +86,19 @@ def extract_upload_images(packet):
         logger.info('Uploaded %s to s3', filename)
 
 
-def read_avros(filename):
-    tar = tarfile.open(filename, 'r:gz')
-    for member in tar.getmembers():
-        f = tar.extractfile(member)
-        if f:
-            ingest_avro(f)
+def read_avros(url):
+    with requests.get(url, stream=True) as response:
+        with tarfile.open(fileobj=response.raw, mode='r|gz') as tar:
+            while True:
+                member = tar.next()
+                if member is None:
+                    break
+                f = tar.extractfile(member)
+                if f:
+                    ingest_avro(f)
 
 
 if __name__ == '__main__':
     db.create_all()
-    filename = sys.argv[1]
-    read_avros(filename)
+    url = sys.argv[1]
+    read_avros(url)

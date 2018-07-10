@@ -50,8 +50,13 @@
 <script type="text/javascript" src="https://s3-us-west-2.amazonaws.com/cdn.lcogt.net/js9/js9.min.js"></script>
 <script type="text/javascript" src="https://s3-us-west-2.amazonaws.com/cdn.lcogt.net/js9/js9plugins.js"></script>
 <script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    JS9.Preload('{{ alert.cutoutScience }}', {scale: 'log', onload: function(){
+      JS9.SetZoom('ToFit');
+    }});
+  });
   function loadCutout(url){
-    JS9.Load(url, {onload: function(){
+    JS9.Load(url, {scale: 'log', onload: function(){
       JS9.SetZoom('ToFit');
     }})
   }
