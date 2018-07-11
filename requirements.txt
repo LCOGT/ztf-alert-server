@@ -6,3 +6,4 @@ fastavro
 astropy
 boto3
 requests
+dramatiq[redis,watch]
