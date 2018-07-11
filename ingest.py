@@ -23,7 +23,7 @@ AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 BUCKET_NAME = os.getenv('S3_BUCKET')
 
-logging.basicConfig(stream=sys.stdout, level=logging.WARN)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 session = boto3.Session(
@@ -121,7 +121,7 @@ def read_avros(url):
                 if f:
                     freader = fastavro.reader(f)
                     for packet in freader:
-                        logger.info('sending task for packet')
+                        logger.info('sending task for packet %s', packet['objectId'])
                         packet = b64_encode_images(packet)
                         ingest_avro.send(packet)
             logger.info('done sending tasks')
