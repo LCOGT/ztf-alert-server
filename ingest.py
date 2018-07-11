@@ -56,7 +56,7 @@ def ingest_avro(packet):
         if packet['candidate']['distnr'] < 2:
             deltamagref = packet['candidate']['magnr'] - packet['candidate']['magpsf']
 
-        # extract_upload_images(packet)
+        extract_upload_images(packet)
 
         alert = Alert(
             objectId=packet['objectId'],

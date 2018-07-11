@@ -15,6 +15,13 @@
   </div>
   <div class="row">
     <div class="col-md-6">
+      <strong>Previous alerts at this location:</strong>
+      <ul>
+        {% for prv_alert in alert.prv_candidate %}
+        <li><a href="/{{ prv_alert.id }}">{{ prv_alert.id }}</a></li>
+        {% endfor %}
+      </ul>
+      <strong>Data:</strong>
       <pre><code>
         {{ alert.pretty_serialized|safe }}
       </code></pre>
@@ -34,12 +41,13 @@
           <a href="{{ alert.cutoutDifference }}">Download</a>
         </li>
       </ul>
-
-    <div class="JS9Menubar"></div>
-    <div class="JS9Toolbar"></div>
-    <div class="JS9" id="JS9"></div>
-    <div style="margin-top: 2px;">
-      <div class="JS9Colorbar"></div>
+      <div class="JS9Menubar"></div>
+      <div class="JS9Toolbar"></div>
+      <div class="JS9" id="JS9"></div>
+      <div style="margin-top: 2px;">
+        <div class="JS9Colorbar"></div>
+      </div>
+      <div id="lightcurve"></div>
     </div>
   </div>
 </div>
@@ -49,16 +57,103 @@
 <script type="text/javascript" src="https://s3-us-west-2.amazonaws.com/cdn.lcogt.net/js9/js9support.min.js"></script>
 <script type="text/javascript" src="https://s3-us-west-2.amazonaws.com/cdn.lcogt.net/js9/js9.min.js"></script>
 <script type="text/javascript" src="https://s3-us-west-2.amazonaws.com/cdn.lcogt.net/js9/js9plugins.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript">
+  var filters = ['g', 'r', 'i'];
+  var filter_colors = ['green', 'red', 'blue'];
+  var unix_epoch_julian_day = 2440587;
+  var day = 86400000;
+
   document.addEventListener('DOMContentLoaded', function() {
     JS9.Preload('{{ alert.cutoutScience }}', {scale: 'log', onload: function(){
       JS9.SetZoom('ToFit');
     }});
+    plotLightCurve();
   });
+
+  function jdToDate(jd){
+    return new Date((Number(jd) - unix_epoch_julian_day) * day);
+  }
+
   function loadCutout(url){
     JS9.Load(url, {scale: 'log', onload: function(){
       JS9.SetZoom('ToFit');
     }})
+  }
+
+  function buildSeries(data, fid){
+    var matches = data.prv_candidate.filter(function(match){
+      return match.candidate.fid === fid;
+    })
+
+    var mags = matches.map(function(match){
+      return match.candidate.magpsf;
+    });
+
+    var mag_err = matches.map(function(match){
+      return match.candidate.sigmapsf;
+    });
+
+    var jds = matches.map(function(match){
+      return jdToDate(match.candidate.jd);
+    });
+
+    if(data.candidate.fid === fid){
+      mags.push(data.candidate.magpsf);
+      mag_err.push(data.candidate.sigmapsf);
+      jds.push(jdToDate(data.candidate.jd));
+    }
+
+    return {
+      x: jds,
+      y: mags,
+      error_y:{
+        type: 'data',
+        array: mag_err,
+        visible: true,
+        color: filter_colors[fid - 1]
+      },
+      mode: 'markers',
+      type: 'scatter',
+      name: filters[fid - 1],
+      marker:{
+        color: filter_colors[fid - 1]
+      }
+    }
+  }
+
+  function buildPlot(data){
+    var fids = data.prv_candidate.map(function(prv_candidate){
+      return prv_candidate.candidate.fid;
+    })
+
+    fids.push(data.candidate.fid)
+
+    fids = fids.filter(function(fid, index){
+      return fids.indexOf(fid) === index;
+    });
+
+    var plot_data  = [];
+    for(var i=0; i<fids.length; i++){
+      plot_data.push(buildSeries(data, fids[i]));
+    }
+
+    Plotly.newPlot('lightcurve', plot_data);
+  }
+
+  function plotLightCurve(){
+    var request = new XMLHttpRequest();
+    request.open('GET', '/{{ alert.id }}/?format=json', true);
+
+    request.onload = function(){
+      if(request.status >= 200 && request.status < 400){
+        var data = JSON.parse(request.responseText);
+        buildPlot(data);
+      }else{
+        alert('Could not load lightcurve');
+      }
+    }
+    request.send();
   }
 </script>
 {% endblock %}
