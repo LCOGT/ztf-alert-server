@@ -60,7 +60,7 @@
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript">
   var filters = ['g', 'r', 'i'];
-  var filter_colors = ['green', 'red', 'blue'];
+  var filter_colors = ['green', 'red', 'black'];
   var unix_epoch_julian_day = 2440587;
   var day = 86400000;
 
@@ -138,7 +138,12 @@
       plot_data.push(buildSeries(data, fids[i]));
     }
 
-    Plotly.newPlot('lightcurve', plot_data);
+    var layout = {
+      yaxis:{
+        autorange: 'reversed'
+      }
+    }
+    Plotly.newPlot('lightcurve', plot_data, layout);
   }
 
   function plotLightCurve(){
