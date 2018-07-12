@@ -9,6 +9,8 @@ import logging
 import requests
 import dramatiq
 import base64
+import time
+import redis
 from dramatiq.brokers.redis import RedisBroker
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
@@ -16,6 +18,7 @@ from astropy.time import Time
 from ztf import Alert, db, app
 
 REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+r = redis.StrictRedis(host=REDIS_HOST, charset='utf-8', decode_responses=True)
 redis_broker = RedisBroker(url=f'redis://{REDIS_HOST}:6379/0')
 dramatiq.set_broker(redis_broker)
 
@@ -113,6 +116,8 @@ def read_avros(url):
     with requests.get(url, stream=True) as response:
         with tarfile.open(fileobj=response.raw, mode='r|gz') as tar:
             while True:
+                while r.info()['used_memory'] > 1410612736:
+                    time.sleep(1)
                 member = tar.next()
                 if member is None:
                     logger.info('Done ingesting this package')
