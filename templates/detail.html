@@ -103,7 +103,6 @@
 
   function toggleMenus(){
     menus = document.getElementsByClassName('JS9Menubar');
-    console.log(menus)
     for(var i=0; i < menus.length; i++){
       menus[i].classList.toggle('d-none');
     }
@@ -127,11 +126,11 @@
     });
 
     var mag_err = matches.map(function(match){
-      return match.candidate.sigmapsf;
+      return match.candidate.sigmapsf.toFixed(2);
     });
 
     var jds = matches.map(function(match){
-      return jdToDate(match.candidate.jd);
+      return match.candidate.jd;
     });
 
     if(data.candidate.fid === fid){
@@ -141,8 +140,9 @@
     }
 
     return {
-      x: jds,
       y: mags,
+      x: jds.map(function(jd){return jdToDate(jd)}),
+      text: jds.map(function(jd){return 'jd: ' + jd}),
       error_y:{
         type: 'data',
         array: mag_err,
@@ -175,8 +175,13 @@
     }
 
     var layout = {
+      title: 'Light Curve',
       yaxis:{
+        title: 'magnitude',
         autorange: 'reversed'
+      },
+      xaxis:{
+        title: 'date',
       }
     }
     Plotly.newPlot('lightcurve', plot_data, layout);
