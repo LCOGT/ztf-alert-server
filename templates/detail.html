@@ -45,25 +45,35 @@
       </table>
     </div>
     <div class="col-md-6">
-      <ul>
-        <li><strong>Science Cutout: </strong>
-          <a href="#" onClick="loadCutout('{{ alert.cutoutScience }}');">View</a>
+      <p><a href="#" onclick="toggleMenus()">Toggle JS9 Menus</a></p>
+      <div class="row">
+        <div class="col-md-4">
+          <strong>Science</strong>
           <a href="{{ alert.cutoutScience }}">Download</a>
-        </li>
-        <li><strong>Template Cutout: </strong>
-          <a href="#" onClick="loadCutout('{{ alert.cutoutTemplate }}');">View</a>
+          <div class="JS9Menubar d-none" id="JS9SciMenubar" data-displays="JS9Sci" data-width="180px"></div>
+          <div class="JS9" id="JS9Sci" data-width="180px" data-height="180px"></div>
+          <div style="margin-top: 2px;">
+            <div class="JS9Colorbar" id="JS9SciColorbar" data-displays="JS9Sci" data-width="180px"></div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <strong>Template</strong>
           <a href="{{ alert.cutoutTemplate }}">Download</a>
-        </li>
-        <li><strong>Difference Cutout: </strong>
-          <a href="#" onClick="loadCutout('{{ alert.cutoutDifference }}');">View</a>
+          <div class="JS9Menubar d-none" id="JS9TmpMenubar" data-displays="JS9Tmp" data-width="180px"></div>
+          <div class="JS9" id="JS9Tmp" data-width="180px" data-height="180px"></div>
+          <div style="margin-top: 2px;">
+            <div class="JS9Colorbar" id="JS9TmpColorbar" data-displays="JS9Tmp" data-width="180px"></div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <strong>Difference</strong>
           <a href="{{ alert.cutoutDifference }}">Download</a>
-        </li>
-      </ul>
-      <div class="JS9Menubar"></div>
-      <div class="JS9Toolbar"></div>
-      <div class="JS9" id="JS9"></div>
-      <div style="margin-top: 2px;">
-        <div class="JS9Colorbar"></div>
+          <div class="JS9Menubar d-none" id="JS9DifMenubar" data-displays="JS9Dif" data-width="180px"></div>
+          <div class="JS9" id="JS9Dif" data-width="180px" data-height="180px"></div>
+          <div style="margin-top: 2px;">
+            <div class="JS9Colorbar" id="JS9DifColorbar" data-displays="JS9Dif" data-width="180px"></div>
+          </div>
+        </div>
       </div>
       <div id="lightcurve"></div>
     </div>
@@ -83,20 +93,26 @@
   var day = 86400000;
 
   document.addEventListener('DOMContentLoaded', function() {
-    JS9.Preload('{{ alert.cutoutScience }}', {scale: 'log', onload: function(){
-      JS9.SetZoom('ToFit');
-    }});
+    JS9.Preload('{{ alert.cutoutScience }}', {scale: 'log', onload: setZoom},  {display: 'JS9Sci'});
+    JS9.Preload('{{ alert.cutoutTemplate }}', {scale: 'log', onload: setZoom}, {display: 'JS9Tmp'});
+    JS9.Preload('{{ alert.cutoutDifference }}', {scale: 'log', onload: setZoom}, {display: 'JS9Dif'});
     plotLightCurve();
   });
 
-  function jdToDate(jd){
-    return new Date((Number(jd) - unix_epoch_julian_day) * day);
+  function toggleMenus(){
+    menus = document.getElementsByClassName('JS9Menubar');
+    console.log(menus)
+    for(var i=0; i < menus.length; i++){
+      menus[i].classList.toggle('d-none');
+    }
   }
 
-  function loadCutout(url){
-    JS9.Load(url, {scale: 'log', onload: function(){
-      JS9.SetZoom('ToFit');
-    }})
+  function setZoom(display){
+    JS9.SetZoom('ToFit', {display: display});
+  }
+
+  function jdToDate(jd){
+    return new Date((Number(jd) - unix_epoch_julian_day) * day);
   }
 
   function buildSeries(data, fid){
