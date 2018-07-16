@@ -6,7 +6,7 @@
 {% block content %}
 <div class="row">
   <div class="col-md-12">
-    <h2>ZTF Archive - Las Cumbres Observatory | Alert {{ alert.id }}</h2>
+    <h2>Alert {{ alert.id }}</h2>
     <p>
       This page lists all data available for this alert. You can add
       <a href="/{{ alert.id }}?format=json" title="json view"><code>?json</code></a> to the url to view it in
@@ -135,8 +135,8 @@
 
     if(data.candidate.fid === fid){
       mags.push(data.candidate.magpsf);
-      mag_err.push(data.candidate.sigmapsf);
-      jds.push(jdToDate(data.candidate.jd));
+      mag_err.push(data.candidate.sigmapsf.toFixed(2));
+      jds.push(data.candidate.jd);
     }
 
     return {

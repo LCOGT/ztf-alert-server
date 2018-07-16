@@ -2,13 +2,12 @@
 {% block content %}
 <div class="row">
   <div class="col-md-12">
-    <h2>ZTF Archive - Las Cumbres Observatory</h2>
     <p>
       The following table lists ZTF alerts in descending order by JD. Use the filters on the right to narrow down
       the results to interesting candidates. When the results look good, add <code>?format=json</code> to the url. You can
       now access this url to retrieve the full data and use it in your scripts.
-      You can access an alert's previous alerts by vising <code>/&lt;lco_id&gt;/</code> where lco_id is the value
-      of the lco_id key in the json view or by clicking the lco_id link in the table.
+      You can access an alert's previous alerts by visiting <code>/&lt;id&gt;/</code> where id is the value
+      of the lco_id key in the json view or by clicking the id link in the table.
     </p>
     <p>
       <a href="#" onClick="toggleDescriptions()"><strong>Column Descriptions</strong></a>
@@ -34,6 +33,7 @@
 </div>
 <div class="row">
   <div class="col-md-10">
+    <div class="table-responsive">
     {% if context.has_prev %}
     <a href="/?{{ arg_str }}&page={{ page - 1 }}" class="btn btn-primary">Prev</a>
     {% else %}
@@ -45,7 +45,7 @@
     <a href="#" class="btn btn-primary disabled">Next</a>
     {% endif %}
     Results: {{ context.total }} Pages: {{ context.pages }}
-    <table class="table table-striped table-sm table-responsive">
+    <table class="table table-striped table-sm">
       <thead>
         <tr>
           <th>id</th>
@@ -60,7 +60,6 @@
           <th title="Diff in magnitude from previous alert">Δmaglatest</th>
           <th title="">Δmagref</th>
           <th title="Real/Bogus score">rb</th>
-          <th title="Star/Galaxy score">classtar</th>
         </tr>
       </thead>
       <tbody>
@@ -78,11 +77,11 @@
           <td>{{ '%.2f'|format(alert.candidate.deltamaglatest) if alert.candidate.deltamaglatest }}</td>
           <td>{{ '%.2f'|format(alert.candidate.deltamagref) if alert.candidate.deltamagref }}</td>
           <td>{{ '%.3f'|format(alert.candidate.rb) }}</td>
-          <td>{{ '%.3f'|format(alert.candidate.classtar) }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
   <div class="col-md-2">
     <form method="GET" action="/">
