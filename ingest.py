@@ -38,9 +38,20 @@ s3 = session.resource('s3')
 
 
 @dramatiq.actor
+def do_ingest(encoded_packet):
+    f_data = base64.b64decode(encoded_packet)
+    freader = fastavro.reader(io.BytesIO(f_data))
+    for packet in freader:
+        ingest_avro(packet)
+    fname = '{}.avro'.format(packet['candid'])
+    upload_avro(io.BytesIO(f_data), fname, packet)
+
+
+do_ingest.logger.setLevel(logging.CRITICAL)
+
+
 def ingest_avro(packet):
     with app.app_context():
-        packet = b64_decode_images(packet)
         ra = packet['candidate'].pop('ra')
         dec = packet['candidate'].pop('dec')
         location = f'srid=4035;POINT({ra} {dec})'
@@ -59,8 +70,6 @@ def ingest_avro(packet):
         if packet['candidate']['distnr'] < 2:
             deltamagref = packet['candidate']['magnr'] - packet['candidate']['magpsf']
 
-        extract_upload_images(packet)
-
         alert = Alert(
             objectId=packet['objectId'],
             publisher=packet.get('publisher', ''),
@@ -70,9 +79,6 @@ def ingest_avro(packet):
             deltamagref=deltamagref,
             gal_l=galactic.l.value,
             gal_b=galactic.b.value,
-            cutoutScienceFileName=packet['cutoutScience'].get('fileName'),
-            cutoutTemplateFileName=packet['cutoutTemplate'].get('fileName'),
-            cutoutDifferenceFileName=packet['cutoutDifference'].get('fileName'),
             **packet['candidate']
             )
         db.session.add(alert)
@@ -80,36 +86,22 @@ def ingest_avro(packet):
         logger.info(alert.objectId)
 
 
-ingest_avro.logger.setLevel(logging.CRITICAL)
+def upload_avro(f, fname, packet):
+    date_key = packet_path(packet)
+    filename = '{0}{1}'.format(date_key, fname)
+    s3.Object(BUCKET_NAME, filename).put(
+        Body=f,
+        ContentDisposition=f'attachment; filename={filename}',
+        ContentType='avro/binary'
+    )
+    logger.info('Uploaded %s to s3', filename)
 
 
-def extract_upload_images(packet):
+def packet_path(packet):
     jd_time = Time(packet['candidate']['jd'], format='jd')
-    date_key = '{0}/{1}/{2}/'.format(
+    return '{0}/{1}/{2}/'.format(
         jd_time.datetime.year, str(jd_time.datetime.month).zfill(2), str(jd_time.datetime.day).zfill(2)
     )
-
-    for cutout in ['cutoutScience', 'cutoutTemplate', 'cutoutDifference']:
-        filename = '{0}{1}'.format(date_key, packet[cutout]['fileName'])
-        s3.Object(BUCKET_NAME, filename).put(
-            Body=io.BytesIO(packet[cutout]['stampData']),
-            ContentDisposition=f'attachment; filename={filename}',
-            ContentType='image/fits',
-            ContentEncoding='gzip',
-        )
-        logger.info('Uploaded %s to s3', filename)
-
-
-def b64_encode_images(packet):
-    for cutout in ['cutoutScience', 'cutoutTemplate', 'cutoutDifference']:
-        packet[cutout]['stampData'] = base64.b64encode(packet[cutout]['stampData']).decode('UTF-8')
-    return packet
-
-
-def b64_decode_images(packet):
-    for cutout in ['cutoutScience', 'cutoutTemplate', 'cutoutDifference']:
-        packet[cutout]['stampData'] = base64.b64decode(packet[cutout]['stampData'])
-    return packet
 
 
 def read_avros(url):
@@ -122,13 +114,10 @@ def read_avros(url):
                 if member is None:
                     logger.info('Done ingesting this package')
                     break
-                f = tar.extractfile(member)
-                if f:
-                    freader = fastavro.reader(f)
-                    for packet in freader:
-                        logger.info('sending task for packet %s', packet['objectId'])
-                        packet = b64_encode_images(packet)
-                        ingest_avro.send(packet)
+                with tar.extractfile(member) as f:
+                    if f:
+                        fencoded = base64.b64encode(f.read()).decode('UTF-8')
+                        do_ingest.send(fencoded)
             logger.info('done sending tasks')
 
 

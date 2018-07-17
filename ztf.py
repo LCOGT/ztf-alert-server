@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, send_file, abort
 from flask_sqlalchemy import SQLAlchemy
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy import cast, func
@@ -7,6 +7,9 @@ from astropy.time import Time
 import math
 import json
 import os
+import io
+import fastavro
+import requests
 
 """
 Convert degrees to meters so we can use geography type:
@@ -164,22 +167,31 @@ class Alert(db.Model):
         )
 
     @property
-    def cutoutScience(self):
-        return '{0}{1}/{2}'.format(
-            S3_URL, self.wall_time_format, self.cutoutScienceFileName
+    def avro(self):
+        return '{0}{1}/{2}.avro'.format(
+            S3_URL, self.wall_time_format, self.alert_candid
         )
+
+    @property
+    def avro_packet(self):
+        response = requests.get(self.avro)
+        freader = fastavro.reader(io.BytesIO(response.content))
+        for packet in freader:
+            if packet['candidate']['candid'] == self.candid:
+                return packet
+        return None
+
+    @property
+    def cutoutScience(self):
+        return self.avro_packet['cutoutScience']
 
     @property
     def cutoutTemplate(self):
-        return '{0}{1}/{2}'.format(
-            S3_URL, self.wall_time_format, self.cutoutTemplateFileName
-        )
+        return self.avro_packet['cutoutTemplate']
 
     @property
     def cutoutDifference(self):
-        return '{0}{1}/{2}'.format(
-            S3_URL, self.wall_time_format, self.cutoutDifferenceFileName
-        )
+        return self.avro_packet['cutoutDifference']
 
     def serialized(self, prv_candidate=False):
         alert = {
@@ -187,6 +199,7 @@ class Alert(db.Model):
             'objectId': self.objectId,
             'publisher': self.publisher,
             'candid': self.alert_candid,
+            'avro': self.avro,
             'candidate': {
                 'jd': self.jd,
                 'fid': self.fid,
@@ -277,9 +290,6 @@ class Alert(db.Model):
                 'jdstartref': self.jdstartref,
                 'jdendref': self.jdendref,
                 'nframesref': self.nframesref,
-                'cutoutScience': self.cutoutScience,
-                'cutoutTemplate': self.cutoutTemplate,
-                'cutoutDifference': self.cutoutDifference
             }
         }
         if prv_candidate:
@@ -433,6 +443,21 @@ def alert_detail(id):
         return jsonify(alert.serialized(prv_candidate=True))
     else:
         return render_template('detail.html', alert=alert)
+
+
+@app.route('/<int:id>/cutout/<cutout>/')
+def cutoutScience(id, cutout):
+    if cutout not in ['Science', 'Template', 'Difference']:
+        abort(404)
+
+    alert = db.session.query(Alert).get(id)
+    cutout_file = getattr(alert, 'cutout' + cutout)
+    return send_file(
+        io.BytesIO(cutout_file['stampData']),
+        mimetype='image/fits',
+        as_attachment=True,
+        attachment_filename=cutout_file['fileName']
+    )
 
 
 @app.route('/')
