@@ -2,10 +2,9 @@
 import sys
 import requests
 import tarfile
-import time
 import io
 
-from ingest import logger, r, BUCKET_NAME, s3
+from ingest import logger, BUCKET_NAME, s3
 
 
 def member_key(url):
@@ -21,8 +20,6 @@ def read_avros(url):
     with requests.get(url, stream=True) as response:
         with tarfile.open(fileobj=response.raw, mode='r|gz') as tar:
             while True:
-                while r.info()['used_memory'] > 1410612736:
-                    time.sleep(1)
                 member = tar.next()
                 if member is None:
                     logger.info('Done uploading avros')

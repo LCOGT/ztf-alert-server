@@ -436,6 +436,11 @@ def request_wants_json():
             request.accept_mimetypes['text/html']
 
 
+@app.route('/help/')
+def help():
+    return render_template('help.html')
+
+
 @app.route('/<int:id>/')
 def alert_detail(id):
     alert = db.session.query(Alert).get(id)
