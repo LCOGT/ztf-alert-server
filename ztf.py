@@ -202,6 +202,7 @@ class Alert(db.Model):
             'avro': self.avro,
             'candidate': {
                 'jd': self.jd,
+                'wall_time': self.wall_time,
                 'fid': self.fid,
                 'filter': self.filter,
                 'pid': self.pid,
@@ -362,11 +363,24 @@ def apply_filters(query, request):
     if request.args.get('b__lt'):
         query = query.filter(Alert.gal_b < float(request.args['b__lt']))
 
+
+    # Return alerts with a wall time after given date. Ex: ?time__gt=2018-07-17
+    if request.args.get('time__gt'):
+        a_time = Time(request.args['time__gt'], format='isot')
+        print(a_time.jd)
+        query = query.filter(Alert.jd > a_time.jd)
+
     # Return alerts with a JD after given date. Ex: ?jd__gt=2458302.6906713
     if request.args.get('jd__gt'):
         query = query.filter(Alert.jd > request.args['jd__gt'])
 
-    # Return alerts with a JD prevous to a given date. Ex: ?jd__lt=2458302.6906713
+    # Return alerts with a wall time previous to a given date. Ex: ?time__lt=2018-07-17
+    if request.args.get('time__lt'):
+        a_time = Time(request.args['time__lt'], format='isot')
+        print(a_time.jd)
+        query = query.filter(Alert.jd < a_time.jd)
+
+    # Return alerts with a JD previous to a given date. Ex: ?jd__lt=2458302.6906713
     if request.args.get('jd__lt'):
         query = query.filter(Alert.jd < request.args['jd__lt'])
 

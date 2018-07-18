@@ -39,6 +39,17 @@
         <input type="text" class="form-control form-control-sm" id="candid" name="candid" value="{{ request.args.candid }}">
       </div>
 
+      <div class="form-row">
+        <div class="col">
+          <label for="time__gt">time (lower)</label>
+          <input type="date" class="form-control form-control-sm" id="time__gt" name="time__gt" value="{{ request.args.time__gt }}" placeholder="Lower">
+        </div>
+        <div class="col">
+          <label for="time__gt">time (upper)</label>
+          <input type="date" class="form-control form-control-sm" id="time__lt" name="time__lt" value="{{ request.args.time__lt }}" placeholder="Upper">
+        </div>
+      </div>
+
       <label for="jd__gt">jd</label>
       <div class="form-row">
         <div class="col">
@@ -184,7 +195,7 @@
         <tr>
           <th>id</th>
           <th>objectId</th>
-          <th>jd</th>
+          <th>time</th>
           <th>filter</th>
           <th title="degrees">ra</th>
           <th title="degrees">dec</th>
@@ -201,7 +212,7 @@
         <tr>
           <td><a href="/{{ alert.lco_id }}/" title="{{ alert.lco_id }}">{{ alert.lco_id }}</a></td>
           <td>{{ alert.objectId }}</td>
-          <td>{{ alert.candidate.jd }}</td>
+          <td>{{ alert.candidate.wall_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
           <td>{{ alert.candidate.filter }}</td>
           <td>{{ '%.3f'|format(alert.candidate.ra) }}</td>
           <td>{{ '%.3f'|format(alert.candidate.dec) }}</td>
