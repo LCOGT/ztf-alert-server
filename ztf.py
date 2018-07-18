@@ -363,7 +363,6 @@ def apply_filters(query, request):
     if request.args.get('b__lt'):
         query = query.filter(Alert.gal_b < float(request.args['b__lt']))
 
-
     # Return alerts with a wall time after given date. Ex: ?time__gt=2018-07-17
     if request.args.get('time__gt'):
         a_time = Time(request.args['time__gt'], format='isot')
