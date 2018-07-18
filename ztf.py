@@ -446,6 +446,15 @@ def apply_filters(query, request):
     if request.args.get('objectidps'):
         psid = int(request.args['objectidps'])
         query = query.filter((Alert.objectidps1 == psid) | (Alert.objectidps2 == psid) | (Alert.objectidps3 == psid))
+
+    sort_by = request.args.get('sort_value', 'jd')
+    sort_order = request.args.get('sort_order', 'desc')
+
+    if sort_order == 'desc':
+        query = query.order_by(getattr(Alert, sort_by).desc())
+    elif sort_order == 'asc':
+        query = query.order_by(getattr(Alert, sort_by).asc())
+
     return query
 
 
@@ -492,7 +501,7 @@ def cutoutScience(id, cutout):
 def alerts():
     page = request.args.get('page', 1, type=int)
     query = db.session.query(Alert)
-    query = apply_filters(query, request).order_by(Alert.jd.desc())
+    query = apply_filters(query, request)
 
     paginator = query.paginate(page, 100, True)
     response = {

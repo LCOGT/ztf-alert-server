@@ -31,6 +31,29 @@
       <button type="submit" class="btn btn-primary">Select</button>
       <a href="/" class="btn btn-secondary">Reset</a>
       <div class="form-group">
+        <label for="sort_value">Sort By</label>
+        <select id="sort_value" name="sort_value" class="form-control form-control-sm" value="{{ request.args.sort_value }}">
+          <option value="jd" {% if request.args.sort_value == 'jd' %} selected {% endif %}>time</option>
+          <option value="id" {% if request.args.sort_value == 'objectId' %} selected {% endif %}>objectId</option>
+          <option value="filter" {% if request.args.sort_value == 'filter' %} selected {% endif %}>filter</option>
+          <!-- <option value="ra" {% if request.args.sort_value == 'ra' %} selected {% endif %}>ra</option>
+          <option value="dec" {% if request.args.sort_value == 'dec' %} selected {% endif %}>dec</option> -->
+          <option value="magpsf" {% if request.args.sort_value == 'magpsf' %} selected {% endif %}>magpsf</option>
+          <option value="magap" {% if request.args.sort_value == 'magap' %} selected {% endif %}>magap</option>
+          <option value="distnr" {% if request.args.sort_value == 'distnr' %} selected {% endif %}>distnr</option>
+          <option value="Δmaglatest" {% if request.args.sort_value == 'Δmaglatest' %} selected {% endif %}>Δmaglatest</option>
+          <option value="Δmagref" {% if request.args.sort_value == 'Δmagref' %} selected {% endif %}>Δmagref</option>
+          <option value="rb" {% if request.args.sort_value == 'rb' %} selected {% endif %}>rb</option>
+        </select>
+      </div>
+      <div>
+        <label for="sort_order">Sort Order</label>
+        <select id="sort_order" name="sort_order" class="form-control form-control-sm" value="{{ request.args.sort_order }}">
+          <option value="desc" {% if request.args.sort_order == 'desc' %} selected {% endif %}>Descending</option>
+          <option value="asc" {% if request.args.sort_order == 'asc' %} selected {% endif %}>Ascending</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label for="objectId">objectId</label>
         <input type="text" class="form-control form-control-sm" id="objectId" name="objectId" value="{{ request.args.objectId }}">
       </div>
