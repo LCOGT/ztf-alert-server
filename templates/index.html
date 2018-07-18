@@ -138,23 +138,41 @@
         <label for="sigmapsf__lte">sigmapsf &lt;= </label>
         <input type="number" step="any" class="form-control form-control-sm" id="sigmapsf__lte" name="sigmapsf__lte" value="{{ request.args.sigmapsf__lte }}">
       </div>
-      <div class="form-group">
-        <label for="magap__lte">magap &lt;=</label>
-        <input type="number" step="any" class="form-control form-control-sm" id="magap__lte" name="magap__lte" value="{{ request.args.magap__lte }}">
+      <label for="magap__lte">magap</label>
+      <div class="form-row">
+        <div class="col">
+          <input type="number" step="any" class="form-control form-control-sm" id="magap__gte" name="magap__gte" value="{{ request.args.magap__gte }}" placeholder="Lower">
+        </div>
+        <div class="col">
+          <input type="number" step="any" class="form-control form-control-sm" id="magap__lte" name="magap__lte" value="{{ request.args.magap__lte }}" placeholder="Upper">
+        </div>
       </div>
-      <div class="form-group">
-        <label for="distnr__lte">distnr &lt;=</label>
-        <input type="number" step="any" class="form-control form-control-sm" id="distnr__lte" name="distnr__lte" value="{{ request.args.distnr__lte }}">
+      <label for="distnr__lte">distnr</label>
+      <div class="form-row">
+        <div class="col">
+          <input type="number" step="any" class="form-control form-control-sm" id="distnr__gte" name="distnr__gte" value="{{ request.args.distnr__gte }}" placeholder="Lower">
+        </div>
+        <div class="col">
+          <input type="number" step="any" class="form-control form-control-sm" id="distnr__lte" name="distnr__lte" value="{{ request.args.distnr__lte }}" placeholder="Upper">
+        </div>
       </div>
-      <div class="form-group">
-        <label for="deltamaglatest__gte">Delta Mag &gt;= </label>
-        <input type="number" step="any" class="form-control form-control-sm" id="deltamaglatest__gte" name="deltamaglatest__gte" value="{{ request.args.deltamaglatest__gte }}">
-        <small class="form-text text-muted">Absolute Value</small>
+      <label for="deltamaglatest__gte">Delta Mag</label>
+      <div class="form-row">
+        <div class="col">
+          <input type="number" step="any" class="form-control form-control-sm" id="deltamaglatest__gte" name="deltamaglatest__gte" value="{{ request.args.deltamaglatest__gte }}" placeholder="Lower">
+        </div>
+        <div class="col">
+          <input type="number" step="any" class="form-control form-control-sm" id="deltamaglatest__lte" name="deltamaglatest__lte" value="{{ request.args.deltamaglatest__lte }}" placeholder="Upper">
+        </div>
       </div>
-      <div class="form-group">
-        <label for="deltamagref__gte">Delta Mag Ref &gt;= </label>
-        <input type="number" step="any" class="form-control form-control-sm" id="deltamagref__gte" name="deltamagref__gte" value="{{ request.args.deltamagref__gte }}">
-        <small class="form-text text-muted">Absolute Value</small>
+      <label for="deltamagref__gte">Delta Mag Ref</label>
+      <div class="form-row">
+        <div class="col">
+          <input type="number" step="any" class="form-control form-control-sm" id="deltamagref__gte" name="deltamagref__gte" value="{{ request.args.deltamagref__gte }}" placeholder="Lower">
+        </div>
+        <div class="col">
+           <input type="number" step="any" class="form-control form-control-sm" id="deltamagref__lte" name="deltamagref__lte" value="{{ request.args.deltamagref__lte }}" placeholder="Upper">
+        </div>
       </div>
       <div class="form-group">
         <label for="rb__gte">rb &gt;= </label>

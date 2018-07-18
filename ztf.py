@@ -398,17 +398,28 @@ def apply_filters(query, request):
     if request.args.get('magap__lte'):
         query = query.filter(Alert.magap <= float(request.args['magap__lte']))
 
+    if request.args.get('magap__gte'):
+        query = query.filter(Alert.magap >= float(request.args['magap__gte']))
+
     # Return alerts where the distance to the nearest source is less than value. ex: ?distnr__lte=1.0
     if request.args.get('distnr__lte'):
         query = query.filter(Alert.distnr <= float(request.args['distnr__lte']))
 
+    if request.args.get('distnr__gte'):
+        query = query.filter(Alert.distnr >= float(request.args['distnr__gte']))
+
     # Return alerts with a magnitude difference greater than the given value (abs value). Ex: ?deltamaglatest__gte=1
     if request.args.get('deltamaglatest__gte'):
-        query = query.filter(func.abs(Alert.deltamaglatest) > float(request.args['deltamaglatest__gte']))
+        query = query.filter(Alert.deltamaglatest >= float(request.args['deltamaglatest__gte']))
+    if request.args.get('deltamaglatest__lte'):
+        query = query.filter(Alert.deltamaglatest <= float(request.args['deltamaglatest__lte']))
 
     # Return alerts with a mag diff on the reference image greater than the given value. Ex: ?deltamagref__gte=1
     if request.args.get('deltamagref__gte'):
-        query = query.filter(func.abs(Alert.deltamagref) > float(request.args['deltamagref__gte']))
+        query = query.filter(Alert.deltamagref >= float(request.args['deltamagref__gte']))
+
+    if request.args.get('deltamagref__lte'):
+        query = query.filter(Alert.deltamagref <= float(request.args['deltamagref__lte']))
 
     # Return alerts with a real/bogus score greater or equal to the given value. Ex: ?rb__gte=0.3
     if request.args.get('rb__gte'):
