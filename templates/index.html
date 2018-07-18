@@ -111,20 +111,20 @@
         <label for="ra__gt">ra</label>
         <div class="form-row">
           <div class="col">
-            <input type="number" step="any" class="form-control form-control-sm" id="ra__gt" name="ra__gt" value="{{ request.args.ra__gt }}" placeholder="Lower">
+            <input class="form-control form-control-sm ra-input" id="ra__gt" name="ra__gt" value="{{ request.args.ra__gt }}" placeholder="Lower">
           </div>
           <div class="col">
-             <input type="number" step="any" class="form-control form-control-sm" id="ra__lt" name="ra__lt" value="{{ request.args.ra__lt }}" placeholder="Upper">
+             <input class="form-control form-control-sm ra-input" id="ra__lt" name="ra__lt" value="{{ request.args.ra__lt }}" placeholder="Upper">
           </div>
         </div>
 
         <label for="dec__gt">dec</label>
         <div class="form-row">
           <div class="col">
-            <input type="number" step="any" class="form-control form-control-sm" id="dec__gt" name="dec__gt" value="{{ request.args.dec__gt }}" placeholder="Lower">
+            <input class="form-control form-control-sm dec-input" id="dec__gt" name="dec__gt" value="{{ request.args.dec__gt }}" placeholder="Lower">
           </div>
           <div class="col">
-             <input type="number" step="any" class="form-control form-control-sm" id="dec__lt" name="dec__lt" value="{{ request.args.dec__lt }}" placeholder="Upper">
+             <input class="form-control form-control-sm dec-input" id="dec__lt" name="dec__lt" value="{{ request.args.dec__lt }}" placeholder="Upper">
           </div>
         </div>
       </div>
@@ -270,12 +270,30 @@
     </div>
   </div>
 </div>
-  <script type="text/javascript">
-    function toggleDescriptions(){
-      colDescriptions = document.getElementsByClassName('col-descriptions');
-      for(var i = 0; i < colDescriptions.length; i++){
-        colDescriptions[i].classList.toggle('d-none');
-      }
-    }
-  </script>
+{% endblock %}
+{% block js %}
+<script src="https://cdn.lco.global/script/utils.js"></script>
+<script type="text/javascript">
+  var raInputs = document.getElementsByClassName('ra-input');
+  for(var i=0; i<raInputs.length; i++){
+    raInputs[i].addEventListener('blur', function(){
+      this.value = Utils.sexagesimalRaToDecimal(this.value);
+    });
+  };
+  var decInputs = document.getElementsByClassName('dec-input');
+  for(var i=0; i<decInputs.length; i++){
+    decInputs[i].addEventListener('blur', function(){
+      this.value = Utils.sexagesimalDecToDecimal(this.value);
+    });
+  };
+  coneInput = document.getElementById('cone');
+  coneInput.addEventListener('blur', function(){
+    ra = this.value.split(',')[0];
+    dec = this.value.split(',')[1];
+    radius = this.value.split(',')[2];
+    ra = Utils.sexagesimalRaToDecimal(ra);
+    dec = Utils.sexagesimalDecToDecimal(dec);
+    this.value = ra + ',' + dec + ',' + radius;
+  });
+</script>
 {% endblock %}
