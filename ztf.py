@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, render_template, send_file, abort
 from flask_sqlalchemy import SQLAlchemy
-from geoalchemy2 import Geography, Geometry
-from sqlalchemy import cast, func
+from geoalchemy2 import Geography, Geometry, shape
+from sqlalchemy import cast
 from urllib.parse import urlencode
 from astropy.time import Time
 import math
@@ -137,14 +137,14 @@ class Alert(db.Model):
 
     @property
     def ra(self):
-        ra = db.session.scalar(cast(self.location, Geometry).ST_X())
+        ra = shape.to_shape(self.location).x
         if ra < 0:
             ra = ra + 360
         return ra
 
     @property
     def dec(self):
-        return db.session.scalar(cast(self.location, Geometry).ST_Y())
+        return shape.to_shape(self.location).y
 
     @property
     def prv_candidate(self):
@@ -222,7 +222,6 @@ class Alert(db.Model):
                 'dec': self.dec,
                 'l': self.gal_l,
                 'b': self.gal_b,
-                'location': json.loads(db.session.scalar(self.location.ST_AsGeoJSON())),
                 'magpsf': self.magpsf,
                 'sigmapsf': self.sigmapsf,
                 'deltamaglatest': self.deltamaglatest,
