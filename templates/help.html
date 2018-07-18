@@ -1,9 +1,101 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="row">
-  <div class="col-md-12">
-    <h2>MARS Help</h2>
-    <p>WIP</p>
-  </div>
+	<div class="col-md-12">
+		<h2>MARS Help</h2>
+		<p>
+			Welcome to MARS, which aims to Make Alerts Really Simple. MARS provides a browser and API based interface to the
+			public ZTF alert stream and an archive of all previously released public alerts.
+		</p>
+
+		<p>
+			MARS allows users to inspect alerts over any period of time and to apply filters
+			on alerts that restrict the alerts shown to a subset that is of interest for any science
+			case. Selected alerts can then be downloaded in their entireties.
+		</p>
+
+		<h3>Using the MARS web interface</h3>
+
+		<p>
+			The main page of the MARS interface consists of a list of selection criteria and a table of alerts. By default the
+			table lists the 100 most recent public alerts from ZTF with no filters applied. To narrow down the results shown,
+			use the filters on the left.
+		</p>
+
+		<p>
+			To apply filters simply enter the desired value into each corresponding field on the filter list and click
+			"select". Some fields are range selections, some upper or lower bounds, and some are simple matches. For example,
+			to show alerts with a Real/Bogus score greater or equal to 0.8, you would place "0.8" in the field marked "rb &gt;="
+			and click "select".
+		</p>
+
+		<h3>Viewing details of a single alert</h3>
+
+		<p>
+			Clicking on the id of an alert in the main table will bring you to that alert’s detail page. Here you can download
+			the original .avro file, view the detection triplet, lightcurve, and the data provided by the avro.
+		</p>
+
+		<p>
+			The three cutouts are taken from the .avro file and display the 1x1 arcmin area surrounding the alert.
+			They are displayed using JS9, which is a web based version of DS9. You can access the menu of JS9 functions
+			(such as scaling and analysis) by clicking "toggle JS9 menus".
+		</p>
+
+		<h3>Using the JSON API</h3>
+
+		<p>
+			JSON (Javascript Object Notation) is a widely used data serialization format. Most programming languages provide
+			functions for reading and writing it, which makes it ideal for use in web services. Both the table and detail view
+			can be viewed in JSON form by adding the URL parameter ?format=json. For example, to view the JSON list of alerts
+			with a Real/Bogus score >= 0.8, you would use the following url:
+		</p>
+
+		<p><a href="https://mars.lco.global/?rb__gte=0.8&format=json">https://mars.lco.global/?rb__gte=0.8&format=json</a></p>
+
+		<p>
+      Alerts will be located within the <code>results</code> key. The other parameters, <code>has_next</code>,
+      <code>has_prev</code>, <code>pages</code> and <code>total</code> are informative keys that should help you
+      paginate through results should your query return greater than 100 alerts.
+		</p>
+
+		<p>
+			Similarly, a single alert can also be viewed in JSON form:
+		</p>
+
+		<p><a href="https://mars.lco.global/4157148/?format=json">https://mars.lco.global/4157148/?format=json</a></p>
+
+		<p>
+      The id part of the URL comes from the "lco_id" key contained in the alert JSON.
+    </p>
+
+    <h3>Column Descriptions</h3>
+		<ul>
+			<li><strong>id</strong>: Unique ID for this alert, assigned by LCO. lco_id in json view.</li>
+			<li><strong>objectId</strong>: Unique identifier for this object.</li>
+			<li><strong>jd</strong>: Observation Julian date at start of exposure [days]</li>
+			<li><strong>filter</strong>: (derived) Filter name (g, r, i) derived from <strong>fid</strong> (1, 2, 3).</li>
+			<li><strong>ra</strong>: Right Ascension of candidate; J2000 [deg]</li>
+			<li><strong>dec</strong>: Declination of candidate; J2000 [deg]</li>
+			<li><strong>magpsf</strong>: Magnitude from PSF-fit photometry measured from difference image [mag]</li>
+			<li><strong>magap</strong>: Aperture mag using 8 pixel diameter aperture measured from difference image [mag]</li>
+			<li><strong>distnr</strong>: Distance to nearest source in reference image PSF-catalog within 30 arcsec (1 pixel = 1.0 arcsecond) [pixels]</li>
+			<li><strong>deltamaglatest</strong>: (Derived) magpsf[this alert] - magpsf[last alert at this location from image of same filter] if a previous alert is available, otherwise Null.</li>
+			<li><strong>deltamagref</strong>: (Derived) If distnr &lt; 2" (~2 ZTF pixels), deltamagref = (magnr - magpsf), otherwise Null.</li>
+			<li><strong>rb</strong>: RealBogus quality score; range is 0 to 1 where closer to 1 is more reliable.</li>
+			<li><strong>classtar</strong>: Star/Galaxy classification score from SExtractor measured from the difference image.</li>
+		</ul>
+    <h3>Filter descriptions</h3>
+    <p>
+      Most filters correspond to columns displayed in the main table, with the exception of the following:
+    </p>
+    <ul>
+      <li><strong>candid</strong>: The value of the candid field of the alert. Exact match.</li>
+      <li><strong>Cone Search</strong>: Returns results contained within the radius of a given point, in degrees. For example: 43.2,-30.2,0.2</li>
+      <li><strong>Nearby Objects</strong>: Each alert contains the names of the 3 closest objects from the Panstarrs-1 catalog. Filtering on a PS1 object id will return alerts for which this object is listed as close by.</li>
+      <li><strong>Classtar</strong>: Return alerts where the The Star/Galaxy classification score from SExtractor is within the provided bounds.</li>
+      <li><strong>Fwhm</strong>: Return alerts where the FWHM is less than or equal to the given value.</li>
+    </ul>
+	</div>
 </div>
 {% endblock %}

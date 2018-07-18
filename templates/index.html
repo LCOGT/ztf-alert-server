@@ -3,6 +3,17 @@
 <div class="row">
   <div class="col-md-12">
     <p>
+      <strong>MARS</strong> provides access to all public alerts issued by ZTF since the start of the public alert
+      stream on June 1, 2018.
+      Subsets of the alerts, filtered by selectable constraints, may be identified and downloaded, either through this
+      webpage or using the underlying API.  Currently, all new alerts from the previous night are ingested into the MARS
+      database at approximately 16:00 UT.  We are working with ZTF to ingest the alerts as they are produced, and we will
+      shortly transition to real-time updates.  In addition to our own <a href="/help" title="help">help</a> page,
+      users should refer to the <a href="https://www.ztf.caltech.edu/">ZTF website</a>
+      and the <a href="https://ztf.uw.edu/alerts/public/">ZTF Alert Archive</a> for documentation on ZTF and the
+      generation of alerts.
+    </p>
+    <p>
       The following table lists ZTF alerts in descending order by JD. Use the filters on the right to narrow down
       the results to interesting candidates. When the results look good, add <code>?format=json</code> to the url. You can
       now access this url to retrieve the full data and use it in your scripts.
@@ -10,25 +21,8 @@
       of the lco_id key in the json view or by clicking the id link in the table.
     </p>
     <p>
-      <a href="#" onClick="toggleDescriptions()"><strong>Column Descriptions</strong></a>
-      <span class="col-descriptions">▶</span>
-      <span class="col-descriptions d-none">▼</span>
+    See the <a href="/help" title="help">help</a> page for descriptions of the table values and available filters.
     </p>
-    <ul class="list-unstyled d-none col-descriptions">
-      <li><strong>lco_id</strong>: Unique ID for this alert, assigned by LCO.</li>
-      <li><strong>objectId</strong>: Unique identifier for this object.</li>
-      <li><strong>jd</strong>: Observation Julian date at start of exposure [days]</li>
-      <li><strong>filter</strong>: (derived) Filter name (g, r, i) derived from <strong>fid</strong> (1, 2, 3).</li>
-      <li><strong>ra</strong>: Right Ascension of candidate; J2000 [deg]</li>
-      <li><strong>dec</strong>: Declination of candidate; J2000 [deg]</li>
-      <li><strong>magpsf</strong>: Magnitude from PSF-fit photometry measured from difference image [mag]</li>
-      <li><strong>magpap</strong>: Aperture mag using 8 pixel diameter aperture measured from difference image [mag]</li>
-      <li><strong>distnr</strong>: Distance to nearest source in reference image PSF-catalog within 30 arcsec (1 pixel = 1.0 arcsecond) [pixels]</li>
-      <li><strong>deltamaglatest</strong>: (Derived) magpsf[this alert] - magpsf[last alert at this location from image of same filter] if a previous alert is available, otherwise Null.</li>
-      <li><strong>deltamagref</strong>: (Derived) If distnr &lt; 2” (~2 ZTF pixels), deltamagref = (magnr - magpsf), otherwise Null.</li>
-      <li><strong>rb</strong>: RealBogus quality score; range is 0 to 1 where closer to 1 is more reliable.</li>
-      <li><strong>classtar</strong>: Star/Galaxy classification score from SExtractor measured from the difference image.</li>
-    </ul>
   </div>
 </div>
 <div class="row">
