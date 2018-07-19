@@ -505,6 +505,7 @@ def alerts():
     page = request.args.get('page', 1, type=int)
     query = db.session.query(Alert)
     query = apply_filters(query, request)
+    latest = db.session.query(Alert).order_by(Alert.jd.desc()).first()
 
     paginator = query.paginate(page, 100, True)
     response = {
@@ -524,4 +525,4 @@ def alerts():
         except KeyError:
             pass
         arg_str = urlencode(args)
-        return render_template('index.html', context=response, page=paginator.page, arg_str=arg_str)
+        return render_template('index.html', context=response, page=paginator.page, arg_str=arg_str, latest=latest)

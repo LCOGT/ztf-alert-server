@@ -224,53 +224,60 @@
   </div>
   <div class="col-md-10">
     <div class="table-responsive">
-    {% if context.has_prev %}
-    <a href="/?{{ arg_str }}&page={{ page - 1 }}" class="btn btn-primary">Prev</a>
-    {% else %}
-    <a href="#" class="btn btn-primary disabled">Prev</a>
-    {% endif %}
-    {% if context.has_next %}
-    <a href="/?{{ arg_str }}&page={{ page + 1 }}" class="btn btn-primary">Next</a>
-    {% else %}
-    <a href="#" class="btn btn-primary disabled">Next</a>
-    {% endif %}
-    Results: {{ context.total }} Pages: {{ context.pages }}
-    <table class="table table-striped table-sm">
-      <thead>
-        <tr>
-          <th>id</th>
-          <th>objectId</th>
-          <th>time</th>
-          <th>filter</th>
-          <th title="degrees">ra</th>
-          <th title="degrees">dec</th>
-          <th title="magnitude">magpsf</th>
-          <th title="magap">magap</th>
-          <th title="distnr">distnr</th>
-          <th title="Diff in magnitude from previous alert">Δmaglatest</th>
-          <th title="">Δmagref</th>
-          <th title="Real/Bogus score">rb</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for alert in context.results %}
-        <tr>
-          <td><a href="/{{ alert.lco_id }}/" title="{{ alert.lco_id }}">{{ alert.lco_id }}</a></td>
-          <td>{{ alert.objectId }}</td>
-          <td>{{ alert.candidate.wall_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-          <td>{{ alert.candidate.filter }}</td>
-          <td>{{ '%.3f'|format(alert.candidate.ra) }}</td>
-          <td>{{ '%.3f'|format(alert.candidate.dec) }}</td>
-          <td>{{ '%.2f'|format(alert.candidate.magpsf) }}</td>
-          <td>{{ '%.2f'|format(alert.candidate.magap) }}</td>
-          <td>{{ '%.3f'|format(alert.candidate.distnr) }}</td>
-          <td>{{ '%.2f'|format(alert.candidate.deltamaglatest) if alert.candidate.deltamaglatest }}</td>
-          <td>{{ '%.2f'|format(alert.candidate.deltamagref) if alert.candidate.deltamagref }}</td>
-          <td>{{ '%.3f'|format(alert.candidate.rb) }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      <div class="row">
+        <div class="col">
+          {% if context.has_prev %}
+          <a href="/?{{ arg_str }}&page={{ page - 1 }}" class="btn btn-primary">Prev</a>
+          {% else %}
+          <a href="#" class="btn btn-primary disabled">Prev</a>
+          {% endif %}
+          {% if context.has_next %}
+          <a href="/?{{ arg_str }}&page={{ page + 1 }}" class="btn btn-primary">Next</a>
+          {% else %}
+          <a href="#" class="btn btn-primary disabled">Next</a>
+          {% endif %}
+          Results: {{ context.total }} Pages: {{ context.pages }}
+        </div>
+        <div class="col-md-4">
+          <span class="text-right">Latest Alert: {{ latest.wall_time.strftime('%Y-%m-%d %H:%M:%S') }} UTC</span>
+        </div>
+      </div>
+      <table class="table table-striped table-sm">
+        <thead>
+          <tr>
+            <th>id</th>
+            <th>objectId</th>
+            <th>time</th>
+            <th>filter</th>
+            <th title="degrees">ra</th>
+            <th title="degrees">dec</th>
+            <th title="magnitude">magpsf</th>
+            <th title="magap">magap</th>
+            <th title="distnr">distnr</th>
+            <th title="Diff in magnitude from previous alert">Δmaglatest</th>
+            <th title="">Δmagref</th>
+            <th title="Real/Bogus score">rb</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for alert in context.results %}
+          <tr>
+            <td><a href="/{{ alert.lco_id }}/" title="{{ alert.lco_id }}">{{ alert.lco_id }}</a></td>
+            <td>{{ alert.objectId }}</td>
+            <td>{{ alert.candidate.wall_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            <td>{{ alert.candidate.filter }}</td>
+            <td>{{ '%.3f'|format(alert.candidate.ra) }}</td>
+            <td>{{ '%.3f'|format(alert.candidate.dec) }}</td>
+            <td>{{ '%.2f'|format(alert.candidate.magpsf) }}</td>
+            <td>{{ '%.2f'|format(alert.candidate.magap) }}</td>
+            <td>{{ '%.3f'|format(alert.candidate.distnr) }}</td>
+            <td>{{ '%.2f'|format(alert.candidate.deltamaglatest) if alert.candidate.deltamaglatest }}</td>
+            <td>{{ '%.2f'|format(alert.candidate.deltamagref) if alert.candidate.deltamagref }}</td>
+            <td>{{ '%.3f'|format(alert.candidate.rb) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
