@@ -123,7 +123,7 @@
     })
 
     var mags = matches.map(function(match){
-      return match.candidate.magpsf;
+      return match.candidate.magpsf.toFixed(2);
     });
 
     var mag_err = matches.map(function(match){
@@ -135,7 +135,7 @@
     });
 
     if(data.candidate.fid === fid){
-      mags.push(data.candidate.magpsf);
+      mags.push(data.candidate.magpsf.toFixed(2));
       mag_err.push(data.candidate.sigmapsf.toFixed(2));
       jds.push(data.candidate.jd);
     }
