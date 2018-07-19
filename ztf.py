@@ -134,6 +134,23 @@ class Alert(db.Model):
     cutoutScienceFileName = db.Column(db.String(200), nullable=True, default=None)
     cutoutTemplateFileName = db.Column(db.String(200), nullable=True, default=None)
     cutoutDifferenceFileName = db.Column(db.String(200), nullable=True, default=None)
+    dsnrms = db.Column(db.Float, nullable=True, default=None)
+    ssnrms = db.Column(db.Float, nullable=True, default=None)
+    dsdiff = db.Column(db.Float, nullable=True, default=None)
+    magzpsci = db.Column(db.Float, nullable=True, default=None)
+    magzpsciunc = db.Column(db.Float, nullable=True, default=None)
+    magzpscirms = db.Column(db.Float, nullable=True, default=None)
+    nmatches = db.Column(db.Integer, nullable=True, default=None)
+    clrcoeff = db.Column(db.Float, nullable=True, default=None)
+    clrcounc = db.Column(db.Float, nullable=True, default=None)
+    zpclrcov = db.Column(db.Float, nullable=True, default=None)
+    zpmed = db.Column(db.Float, nullable=True, default=None)
+    clrmed = db.Column(db.Float, nullable=True, default=None)
+    clrrms = db.Column(db.Float, nullable=True, default=None)
+    neargaia = db.Column(db.Float, nullable=True, default=None)
+    neargaiabright = db.Column(db.Float, nullable=True, default=None)
+    maggaia = db.Column(db.Float, nullable=True, default=None)
+    maggaiabright = db.Column(db.Float, nullable=True, default=None)
 
     @property
     def ra(self):
@@ -290,6 +307,23 @@ class Alert(db.Model):
                 'jdstartref': self.jdstartref,
                 'jdendref': self.jdendref,
                 'nframesref': self.nframesref,
+                'dsnrms': self.dsnrms,
+                'ssnrms': self.ssnrms,
+                'dsdiff': self.dsdiff,
+                'magzpsci': self.magzpsci,
+                'magzpsciunc': self.magzpsciunc,
+                'magzpscirms': self.magzpscirms,
+                'nmatches': self.nmatches,
+                'clrcoeff': self.clrcoeff,
+                'clrcounc': self.clrcounc,
+                'zpclrcov': self.zpclrcov,
+                'zpmed': self.zpmed,
+                'clrmed': self.clrmed,
+                'clrrms': self.clrrms,
+                'neargaia': self.neargaia,
+                'neargaiabright': self.neargaiabright,
+                'maggaia': self.maggaia,
+                'maggaiabright': self.maggaiabright,
             }
         }
         if prv_candidate:
