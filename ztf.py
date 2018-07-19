@@ -389,6 +389,9 @@ def apply_filters(query, request):
     if request.args.get('magpsf__lte'):
         query = query.filter(Alert.magpsf <= float(request.args['magpsf__lte']))
 
+    if request.args.get('magpsf__gte'):
+        query = query.filter(Alert.magpsf >= float(request.args['magpsf__gte']))
+
     # Return alerts with a brightness uncertainty less than the given value. Ex: ?sigmapsf__lte=0.4
     if request.args.get('sigmapsf__lte'):
         query = query.filter(Alert.sigmapsf <= float(request.args['sigmapsf__lte']))

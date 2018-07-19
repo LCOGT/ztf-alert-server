@@ -152,10 +152,14 @@
           </div>
         </div>
       </div>
-
-      <div class="form-group">
-        <label for="magpsf__lte">magpsf &lt;=</label>
-        <input type="number" step="any" class="form-control form-control-sm" id="magpsf__lte" name="magpsf__lte" value="{{ request.args.magpsf__lte }}">
+      <label for="magpsf__lte">magpsf</label>
+      <div class="form-row">
+        <div class="col">
+          <input type="number" step="any" class="form-control form-control-sm" id="magpsf__gte" name="magpsf__gte" value="{{ request.args.magpsf__gte }}" placeholder="Lower">
+        </div>
+        <div class="col">
+          <input type="number" step="any" class="form-control form-control-sm" id="magpsf__lte" name="magpsf__lte" value="{{ request.args.magpsf__lte }}" placeholder="Upper">
+        </div>
       </div>
       <div class="form-group">
         <label for="sigmapsf__lte">sigmapsf &lt;= </label>
