@@ -266,8 +266,8 @@
             <td>{{ alert.objectId }}</td>
             <td>{{ alert.candidate.wall_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
             <td>{{ alert.candidate.filter }}</td>
-            <td>{{ '%.3f'|format(alert.candidate.ra) }}</td>
-            <td>{{ '%.3f'|format(alert.candidate.dec) }}</td>
+            <td>{{ '%.5f'|format(alert.candidate.ra) }}</td>
+            <td>{{ '%.5f'|format(alert.candidate.dec) }}</td>
             <td>{{ '%.2f'|format(alert.candidate.magpsf) }}</td>
             <td>{{ '%.2f'|format(alert.candidate.magap) }}</td>
             <td>{{ '%.3f'|format(alert.candidate.distnr) }}</td>

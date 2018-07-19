@@ -18,8 +18,8 @@
 
     <p>
     The main page of the MARS interface consists of a list of selection criteria and a table of alerts. By default the
-    table lists the 100 most recent public alerts from ZTF with no filters applied. To narrow down the results shown,
-    use the filters on the left.
+    table lists the 100 most recent public alerts from ZTF with no filters applied. Earlier results can be viewed by
+    using the prev/next links. To narrow down the results shown, for example by date, use the filters on the left.
     </p>
 
     <p>
@@ -67,6 +67,17 @@
 
     <p>
     The id part of the URL comes from the "lco_id" key contained in the alert JSON.
+    </p>
+
+    <h3>Working with avro files</h3>
+    <p>
+      ZTF uses the <a href="https://avro.apache.org/">Apache avro</a> data serialization format to distribute alerts.
+      You can access the raw .avro files from MARS by using the web interface or following the <code>avro</code>
+      link in the json views.
+    </p>
+    <p>
+      ZTF provides <a href="https://github.com/ZwickyTransientFacility/ztf-avro-alert"> a repo</a> containing example
+      scripts and ipython notebooks for working with these files.
     </p>
 
     <h3>Column Descriptions</h3>
