@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 BUCKET_NAME = os.getenv('S3_BUCKET')
-INGESTED_FILES_LIST_BUCKET_NAME = os.getenv('INGESTED_FILES_BUCKET')
 
 session = boto3.Session()
 
@@ -38,15 +37,15 @@ def get_published_alert_files():
 
 def get_ingested_alerts_file():
     try:
-        s3.Object(INGESTED_FILES_LIST_BUCKET_NAME).download_file(INGESTED_FILES_LIST_FILENAME, 'ingested_files.csv')
+        s3.Object(BUCKET_NAME).download_file(INGESTED_FILES_LIST_FILENAME, 'ingested_files.csv')
     except:
         print("Failed to download ingested files list")
 
 
 def push_ingested_alerts_file():
     try:
-        s3.Object(INGESTED_FILES_LIST_BUCKET_NAME, INGESTED_FILES_LIST_FILENAME).put(Body=open(INGESTED_FILES_LIST_FILENAME, 'rb'))
-        s3.Bucket(INGESTED_FILES_LIST_BUCKET_NAME).upload_file(INGESTED_FILES_LIST_FILENAME, INGESTED_FILES_LIST_FILENAME)
+        s3.Object(BUCKET_NAME, INGESTED_FILES_LIST_FILENAME).put(Body=open(INGESTED_FILES_LIST_FILENAME, 'rb'))
+        s3.Bucket(BUCKET_NAME).upload_file(INGESTED_FILES_LIST_FILENAME, INGESTED_FILES_LIST_FILENAME)
     except:
         logger.error("Unable to push file of ingested alerts")
 
