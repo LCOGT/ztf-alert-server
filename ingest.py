@@ -17,27 +17,22 @@ from astropy.time import Time
 
 from ztf import Alert, db, app
 
-REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
-r = redis.StrictRedis(host=REDIS_HOST, charset='utf-8', decode_responses=True)
-redis_broker = RedisBroker(url=f'redis://{REDIS_HOST}:6379/0')
-dramatiq.set_broker(redis_broker)
+# REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+# r = redis.StrictRedis(host=REDIS_HOST, charset='utf-8', decode_responses=True)
+# redis_broker = RedisBroker(url=f'redis://{REDIS_HOST}:6379/0')
+# dramatiq.set_broker(redis_broker)
 
-AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 BUCKET_NAME = os.getenv('S3_BUCKET')
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-session = boto3.Session(
-    aws_access_key_id=AWS_ACCESS_KEY,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY
-)
+session = boto3.Session()
 
 s3 = session.resource('s3')
 
 
-@dramatiq.actor
+# @dramatiq.actor
 def do_ingest(encoded_packet):
     f_data = base64.b64decode(encoded_packet)
     freader = fastavro.reader(io.BytesIO(f_data))
@@ -47,7 +42,7 @@ def do_ingest(encoded_packet):
     upload_avro(io.BytesIO(f_data), fname, packet)
 
 
-do_ingest.logger.setLevel(logging.CRITICAL)
+# do_ingest.logger.setLevel(logging.INFO)
 
 
 def ingest_avro(packet):
@@ -108,8 +103,8 @@ def read_avros(url):
     with requests.get(url, stream=True) as response:
         with tarfile.open(fileobj=response.raw, mode='r|gz') as tar:
             while True:
-                while r.info()['used_memory'] > 1410612736:
-                    time.sleep(1)
+                # while r.info()['used_memory'] > 1410612736:
+                #     time.sleep(1)
                 member = tar.next()
                 if member is None:
                     logger.info('Done ingesting this package')
@@ -117,7 +112,8 @@ def read_avros(url):
                 with tar.extractfile(member) as f:
                     if f:
                         fencoded = base64.b64encode(f.read()).decode('UTF-8')
-                        do_ingest.send(fencoded)
+                        #do_ingest.send(fencoded)
+                        do_ingest(fencoded)
             logger.info('done sending tasks')
 
 
