@@ -11,38 +11,47 @@ import dramatiq
 import base64
 import time
 import redis
+from kafka import KafkaConsumer
 from dramatiq.brokers.redis import RedisBroker
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 
 from ztf import Alert, db, app
 
-# REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
-# r = redis.StrictRedis(host=REDIS_HOST, charset='utf-8', decode_responses=True)
-# redis_broker = RedisBroker(url=f'redis://{REDIS_HOST}:6379/0')
-# dramatiq.set_broker(redis_broker)
+REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+r = redis.StrictRedis(host=REDIS_HOST, charset='utf-8', decode_responses=True)
+redis_broker = RedisBroker(url=f'redis://{REDIS_HOST}:6379/0')
+dramatiq.set_broker(redis_broker)
 
 BUCKET_NAME = os.getenv('S3_BUCKET')
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-session = boto3.Session()
+# session = boto3.Session()
 
-s3 = session.resource('s3')
+# s3 = session.resource('s3')
+
+# ZTF Kafka Configuration
+#TOPIC = '^(ztf_\d{8}_programid1)'
+TOPIC = 'ztf_20180725_programid1'
+GROUP_ID = 'LCOGT-test01'
+#PRODUCER_HOST = 'localhost'
+PRODUCER_HOST = 'public.alerts.ztf.uw.edu'
+PRODUCER_PORT = '9092'
 
 
-# @dramatiq.actor
+@dramatiq.actor
 def do_ingest(encoded_packet):
     f_data = base64.b64decode(encoded_packet)
     freader = fastavro.reader(io.BytesIO(f_data))
     for packet in freader:
         ingest_avro(packet)
     fname = '{}.avro'.format(packet['candid'])
-    upload_avro(io.BytesIO(f_data), fname, packet)
+    # upload_avro(io.BytesIO(f_data), fname, packet)
 
 
-# do_ingest.logger.setLevel(logging.INFO)
+do_ingest.logger.setLevel(logging.INFO)
 
 
 def ingest_avro(packet):
@@ -79,6 +88,7 @@ def ingest_avro(packet):
         db.session.add(alert)
         db.session.commit()
         logger.info(alert.objectId)
+        print(alert.objectId)
 
 
 def upload_avro(f, fname, packet):
@@ -103,8 +113,8 @@ def read_avros(url):
     with requests.get(url, stream=True) as response:
         with tarfile.open(fileobj=response.raw, mode='r|gz') as tar:
             while True:
-                # while r.info()['used_memory'] > 1410612736:
-                #     time.sleep(1)
+                while r.info()['used_memory'] > 1410612736:
+                    time.sleep(1)
                 member = tar.next()
                 if member is None:
                     logger.info('Done ingesting this package')
@@ -112,12 +122,22 @@ def read_avros(url):
                 with tar.extractfile(member) as f:
                     if f:
                         fencoded = base64.b64encode(f.read()).decode('UTF-8')
-                        #do_ingest.send(fencoded)
-                        do_ingest(fencoded)
+                        do_ingest.send(fencoded)
+                        #do_ingest(fencoded)
             logger.info('done sending tasks')
+
+
+def start_consumer():
+    consumer = KafkaConsumer(TOPIC, bootstrap_servers=f'{PRODUCER_HOST}:{PRODUCER_PORT}', group_id=GROUP_ID)
+    for msg in consumer:
+        alert = msg.value
+        print(alert)
+        #do_ingest.send(base64.b64encode(value))
+        consumer.commit()
 
 
 if __name__ == '__main__':
     db.create_all()
-    url = sys.argv[1]
-    read_avros(url)
+    #url = sys.argv[1]
+    #read_avros(url)
+    start_consumer()
