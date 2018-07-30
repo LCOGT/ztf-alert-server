@@ -28,15 +28,13 @@ BUCKET_NAME = os.getenv('S3_BUCKET')
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# session = boto3.Session()
+session = boto3.Session()
 
-# s3 = session.resource('s3')
+s3 = session.resource('s3')
 
 # ZTF Kafka Configuration
-#TOPIC = '^(ztf_\d{8}_programid1)'
-TOPIC = 'ztf_20180725_programid1'
-GROUP_ID = 'LCOGT-test01'
-#PRODUCER_HOST = 'localhost'
+TOPIC = '^(ztf_\d{8}_programid1)'
+GROUP_ID = 'LCOGT-test'
 PRODUCER_HOST = 'public.alerts.ztf.uw.edu'
 PRODUCER_PORT = '9092'
 
@@ -48,7 +46,7 @@ def do_ingest(encoded_packet):
     for packet in freader:
         ingest_avro(packet)
     fname = '{}.avro'.format(packet['candid'])
-    # upload_avro(io.BytesIO(f_data), fname, packet)
+    upload_avro(io.BytesIO(f_data), fname, packet)
 
 
 do_ingest.logger.setLevel(logging.INFO)
@@ -128,11 +126,11 @@ def read_avros(url):
 
 
 def start_consumer():
-    consumer = KafkaConsumer(TOPIC, bootstrap_servers=f'{PRODUCER_HOST}:{PRODUCER_PORT}', group_id=GROUP_ID)
+    consumer = KafkaConsumer(bootstrap_servers=f'{PRODUCER_HOST}:{PRODUCER_PORT}', group_id=GROUP_ID)
+    consumer.subscribe(pattern=TOPIC)
     for msg in consumer:
         alert = msg.value
-        print(alert)
-        #do_ingest.send(base64.b64encode(value))
+        do_ingest.send(base64.b64encode(alert).decode('UTF-8'))
         consumer.commit()
 
 
