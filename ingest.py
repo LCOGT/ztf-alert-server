@@ -49,7 +49,7 @@ def do_ingest(encoded_packet):
     upload_avro(io.BytesIO(f_data), fname, packet)
 
 
-do_ingest.logger.setLevel(logging.INFO)
+do_ingest.logger.setLevel(logging.DEBUG)
 
 
 def ingest_avro(packet):
@@ -85,8 +85,7 @@ def ingest_avro(packet):
             )
         db.session.add(alert)
         db.session.commit()
-        logger.info(alert.objectId)
-        print(alert.objectId)
+        logger.info('Inserted object %s', alert.objectId)
 
 
 def upload_avro(f, fname, packet):
@@ -121,7 +120,6 @@ def read_avros(url):
                     if f:
                         fencoded = base64.b64encode(f.read()).decode('UTF-8')
                         do_ingest.send(fencoded)
-                        #do_ingest(fencoded)
             logger.info('done sending tasks')
 
 
@@ -130,8 +128,10 @@ def start_consumer():
     consumer.subscribe(pattern=TOPIC)
     for msg in consumer:
         alert = msg.value
+        logger.debug('Received alert from stream')
         do_ingest.send(base64.b64encode(alert).decode('UTF-8'))
         consumer.commit()
+        logger.debug('Committed index to Kafka producer')
 
 
 if __name__ == '__main__':
