@@ -18,10 +18,10 @@ from astropy.time import Time
 
 from ztf import Alert, db, app
 
-REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
-r = redis.StrictRedis(host=REDIS_HOST, charset='utf-8', decode_responses=True)
-redis_broker = RedisBroker(url=f'redis://{REDIS_HOST}:6379/0')
-dramatiq.set_broker(redis_broker)
+# REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+# r = redis.StrictRedis(host=REDIS_HOST, charset='utf-8', decode_responses=True)
+# redis_broker = RedisBroker(url=f'redis://{REDIS_HOST}:6379/0')
+# dramatiq.set_broker(redis_broker)
 
 BUCKET_NAME = os.getenv('S3_BUCKET')
 
@@ -39,7 +39,7 @@ PRODUCER_HOST = 'public.alerts.ztf.uw.edu'
 PRODUCER_PORT = '9092'
 
 
-@dramatiq.actor
+#@dramatiq.actor
 def do_ingest(encoded_packet):
     f_data = base64.b64decode(encoded_packet)
     freader = fastavro.reader(io.BytesIO(f_data))
@@ -49,7 +49,7 @@ def do_ingest(encoded_packet):
     upload_avro(io.BytesIO(f_data), fname, packet)
 
 
-do_ingest.logger.setLevel(logging.DEBUG)
+#do_ingest.logger.setLevel(logging.DEBUG)
 
 
 def ingest_avro(packet):
@@ -129,7 +129,8 @@ def start_consumer():
     for msg in consumer:
         alert = msg.value
         logger.debug('Received alert from stream')
-        do_ingest.send(base64.b64encode(alert).decode('UTF-8'))
+        #do_ingest.send(base64.b64encode(alert).decode('UTF-8'))
+        do_ingest(base64.b64encode(alert).decode('UTF-8'))
         consumer.commit()
         logger.debug('Committed index to Kafka producer')
 
