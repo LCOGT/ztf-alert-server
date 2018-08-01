@@ -38,7 +38,7 @@ class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     publisher = db.Column(db.String(200), nullable=False, default='')
     objectId = db.Column(db.String(50), index=True)
-    alert_candid = db.Column(db.BigInteger, nullable=True, default=None, index=True)
+    alert_candid = db.Column(db.BigInteger, nullable=True, default=None, index=True, unique=True)
 
     jd = db.Column(db.Float, nullable=False, index=True)
     fid = db.Column(db.Integer, nullable=False)
