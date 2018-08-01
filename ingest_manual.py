@@ -1,4 +1,4 @@
-from ingest_stream import do_ingest
+from ingest import do_ingest
 from ztf import db
 import sys
 import requests

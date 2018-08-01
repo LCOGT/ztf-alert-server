@@ -14,12 +14,17 @@ from astropy.time import Time
 
 from ztf import Alert, db, app
 
+AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 BUCKET_NAME = os.getenv('S3_BUCKET')
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-session = boto3.Session()
+session = boto3.Session(
+    aws_access_key_id=AWS_ACCESS_KEY,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+)
 
 s3 = session.resource('s3')
 
@@ -76,10 +81,10 @@ def ingest_avro(packet):
         try:
             db.session.add(alert)
             db.session.commit()
-            logger.info('Inserted object %s', alert.objectId)
+            logger.info('Inserted object %s', alert.alert_candid)
         except:
             db.session.rollback()
-            logger.warn('Failed to insert object %s with error %s', alert.objectId)
+            logger.warn('Failed to insert object %s', alert.alert_candid)
             raise
 
 
