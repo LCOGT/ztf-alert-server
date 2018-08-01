@@ -7,4 +7,5 @@ astropy
 boto3
 requests
 shapely
-dramatiq[redis,watch]
+kafka-python
+lz4tools

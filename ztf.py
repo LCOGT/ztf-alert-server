@@ -24,8 +24,8 @@ FILTERS = ['g', 'r', 'i']
 S3_URL = 'https://s3-us-west-2.amazonaws.com/ztf-alert.lco.global/'
 
 DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_USER = os.getenv('DB_USER', 'postgres')
-DB_PASS = os.getenv('DB_PASS', 'postgres')
+DB_USER = os.getenv('DB_USER', 'ztf')
+DB_PASS = os.getenv('DB_PASS', 'ztf')
 DB_NAME = os.getenv('DB_NAME', 'ztf')
 
 app = Flask(__name__)
@@ -38,7 +38,7 @@ class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     publisher = db.Column(db.String(200), nullable=False, default='')
     objectId = db.Column(db.String(50), index=True)
-    alert_candid = db.Column(db.BigInteger, nullable=True, default=None, index=True)
+    alert_candid = db.Column(db.BigInteger, nullable=True, default=None, index=True, unique=True)
 
     jd = db.Column(db.Float, nullable=False, index=True)
     fid = db.Column(db.Integer, nullable=False)
