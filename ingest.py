@@ -11,6 +11,8 @@ import time
 from kafka import KafkaConsumer
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
+from botocore.exceptions import ClientError
+from sqlalchemy import exc
 
 from ztf import Alert, db, app
 
@@ -38,13 +40,10 @@ PRODUCER_PORT = '9092'
 def do_ingest(encoded_packet):
     f_data = base64.b64decode(encoded_packet)
     freader = fastavro.reader(io.BytesIO(f_data))
-    try:
-        for packet in freader:
-            ingest_avro(packet)
+    for packet in freader:
+        ingest_avro(packet)
         fname = '{}.avro'.format(packet['candid'])
         upload_avro(io.BytesIO(f_data), fname, packet)
-    except:
-        pass
 
 
 def ingest_avro(packet):
@@ -82,21 +81,23 @@ def ingest_avro(packet):
             db.session.add(alert)
             db.session.commit()
             logger.info('Inserted object %s', alert.alert_candid)
-        except:
+        except exc.SQLAlchemyError:
             db.session.rollback()
             logger.warn('Failed to insert object %s', alert.alert_candid)
-            raise
 
 
 def upload_avro(f, fname, packet):
     date_key = packet_path(packet)
     filename = '{0}{1}'.format(date_key, fname)
-    s3.Object(BUCKET_NAME, filename).put(
-        Body=f,
-        ContentDisposition=f'attachment; filename={filename}',
-        ContentType='avro/binary'
-    )
-    logger.info('Uploaded %s to s3', filename)
+    try:
+        s3.Object(BUCKET_NAME, filename).put(
+            Body=f,
+            ContentDisposition=f'attachment; filename={filename}',
+            ContentType='avro/binary'
+        )
+        logger.info('Uploaded %s to s3', filename)
+    except ClientError:
+        logger.warn('Failed to upload %s to s3', filename)
 
 
 def packet_path(packet):
