@@ -8,7 +8,6 @@ Please note this code is in a state of flux as the interface between ZTF and MAR
 ### Requirements
 * Python 3.6+
 * Postgresql 10 with PostGIS installed.
-* Redis
 * Amazon S3
 
 ### Libraries used
@@ -18,7 +17,7 @@ Please note this code is in a state of flux as the interface between ZTF and MAR
 * [PostGIS](https://postgis.net/)
 * [Astropy](http://www.astropy.org/)
 * [fastavro](https://github.com/fastavro/fastavro)
-* [Dramatiq](https://dramatiq.io/)
+* [kafka-python](https://github.com/dpkp/kafka-python)
 * [JS9](https://js9.si.edu/)
 * [Plotly](https://plot.ly/)
 
@@ -26,20 +25,18 @@ Please note this code is in a state of flux as the interface between ZTF and MAR
 ### Layout
 [ztf.py](ztf.py) Is the main entrypoint for the webapp. It contains the Flask endpoints as well as the SqlAlchemy schema and database connections.
 
-[ingest.py](ingest.py) Contains the code to download and parse [the tarballs from ztf](https://ztf.uw.edu/alerts/public/) that contain the individual alerts. It farms out the ingest of each file to one of several Dramatiq workers in order to speed up the process.
+[ingest.py](ingest.py) Contains the code to subscribe to and process the Kafka alert stream from [ZTF](https://www.ztf.caltech.edu/) that publishes the individual alerts. The application server must be whitelisted by the ZTF foundation in order to subscribe to this alert stream.
+
+[ingest_manual.py](ingest_manual.py) Contains the code to manually download and parse [the tarballs from ztf](https://ztf.uw.edu/alerts/public/) that contain the individual alerts. Before leveraging Kafka, this was being done by farming out the ingest of each file to one of several Dramatiq workers in order to speed up the process. This historical version can be found [here](https://github.com/LCOGT/ztf-alert-server/blob/0e7fbae04fa185827bdc0858604885f0ee8609a7/ingest.py).
 
 [templates/](templates/) contains the server side rendered html templates for the web ui.
 
 ### How it works
 
-The ingester streams the
-https response from a request to the ztf tar.gz file. While this response is streaming the tar file is
-constructed in memory and each file in it read sequentially. A task is created for each file which
-is then executed by one of the Dramatiq workers.
-
-Each worker inserts a record into the database as well as uploads the original avro file to Amazon s3.
-The database schema resembles a flattened avro alert, so inserting a records is really just a matter
-of parsing it with fastavro and sending it to Postgres.
+A Kafka consumer is initialized that subscribes to the set of topics. As alerts are published to the
+given topic, the ingester inserts a records into the database for each alert as well as uploads the
+original avro file to Amazon s3. The database schema resembles a flattened avro alert, so inserting
+a records is really just a matter of parsing it with fastavro and sending it to Postgres.
 
 Meanwhile the flask app is serving incoming http requests with some simple endpoints to return results from
 the single `alert` table.
