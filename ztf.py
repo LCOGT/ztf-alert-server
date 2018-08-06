@@ -358,6 +358,13 @@ def apply_filters(query, request):
             Alert.location.ST_DWithin(f'srid=4035;POINT({ra} {dec})', degrees_to_meters(float(radius)))
         )
 
+    if request.args.get('objectcone'):
+        objectname, radius = request.args['objectcone'].split(',')
+        ra, dec = get_simbad2k_coords(objectname)
+        query = query.filter(
+            Alert.location.ST_DWithin(f'srid=4035;POINT({ra} {dec})', degrees_to_meters(float(radius)))
+        )
+
     # Return alerts with an RA greater than a given value in degrees. Ex: ?ra__gt=20
     if request.args.get('ra__gt'):
         ra = float(request.args['ra__gt'])
@@ -503,6 +510,13 @@ def request_wants_json():
         return best == 'application/json' and \
             request.accept_mimetypes[best] > \
             request.accept_mimetypes['text/html']
+
+
+def get_simbad2k_coords(objectname):
+    response = requests.get(f'https://simbad2k.lco.global/{objectname}?target_type=sidereal')
+    response.raise_for_status()
+    result = response.json()
+    return result['ra_d'], result['dec_d']
 
 
 @app.route('/help/')

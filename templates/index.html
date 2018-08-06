@@ -41,8 +41,8 @@
           <option value="magpsf" {% if request.args.sort_value == 'magpsf' %} selected {% endif %}>magpsf</option>
           <option value="magap" {% if request.args.sort_value == 'magap' %} selected {% endif %}>magap</option>
           <option value="distnr" {% if request.args.sort_value == 'distnr' %} selected {% endif %}>distnr</option>
-          <option value="deltamaglatest" {% if request.args.sort_value == 'Δmaglatest' %} selected {% endif %}>Δmaglatest</option>
-          <option value="deltamagref" {% if request.args.sort_value == 'Δmagref' %} selected {% endif %}>Δmagref</option>
+          <option value="deltamaglatest" {% if request.args.sort_value == 'deltamaglatest' %} selected {% endif %}>Δmaglatest</option>
+          <option value="deltamagref" {% if request.args.sort_value == 'deltamagref' %} selected {% endif %}>Δmagref</option>
           <option value="rb" {% if request.args.sort_value == 'rb' %} selected {% endif %}>rb</option>
         </select>
       </div>
@@ -98,6 +98,15 @@
         <input type="text" class="form-control form-control-sm" id="cone" name="cone" value="{{ request.args.cone }}">
         <small class="form-text text-muted">Format: ra,dec,radius in degrees.</small>
       </div>
+
+      <div class="form-group">
+        <label for="objectcone">Cone Search (object)</label>
+        <input type="text" class="form-control form-control-sm" id="cone" name="objectcone" value="{{ request.args.objectcone }}">
+        <small class="form-text text-muted">
+          Format: Object name,radius in degrees. Object name lookups via <a href="https://simbad2k.lco.global" title="Simbad2k">Simbad2k</a>.
+        </small>
+      </div>
+
       <div class="form-group">
         <label for="objectidps">Nearby Objects</label>
         <input type="text" class="form-control form-control-sm" id="objectidps" name="objectidps" value="{{ request.args.objectidps }}">
