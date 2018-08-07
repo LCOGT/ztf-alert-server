@@ -1,5 +1,5 @@
 from ingest import do_ingest
-from ztf import db
+from ztf import db, logger
 import sys
 import requests
 import tarfile
