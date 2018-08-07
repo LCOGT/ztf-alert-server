@@ -14,14 +14,12 @@ from astropy.time import Time
 from botocore.exceptions import ClientError
 from sqlalchemy import exc
 
-from ztf import Alert, db, app
+from ztf import Alert, db, app, logger
 
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 BUCKET_NAME = os.getenv('S3_BUCKET')
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 session = boto3.Session(
     aws_access_key_id=AWS_ACCESS_KEY,
@@ -80,10 +78,10 @@ def ingest_avro(packet):
         try:
             db.session.add(alert)
             db.session.commit()
-            logger.info('Inserted object %s', alert.alert_candid)
+            logger.info('Successfully inserted object', extra={'tags': {'candid': alert.alert_candid}})
         except exc.SQLAlchemyError:
             db.session.rollback()
-            logger.warn('Failed to insert object %s', alert.alert_candid)
+            logger.warn('Failed to insert object', extra={'tags': {'candid': alert.alert_candid}})
 
 
 def upload_avro(f, fname, packet):
@@ -95,9 +93,9 @@ def upload_avro(f, fname, packet):
             ContentDisposition=f'attachment; filename={filename}',
             ContentType='avro/binary'
         )
-        logger.info('Uploaded %s to s3', filename)
+        logger.info('Successfully uploaded file to s3', extra={'tags': {'filename': filename}})
     except ClientError:
-        logger.warn('Failed to upload %s to s3', filename)
+        logger.warn('Failed to upload file to s3', extra={'tags': {'filename': filename}})
 
 
 def packet_path(packet):
@@ -110,6 +108,7 @@ def packet_path(packet):
 def start_consumer():
     consumer = KafkaConsumer(bootstrap_servers=f'{PRODUCER_HOST}:{PRODUCER_PORT}', group_id=GROUP_ID)
     consumer.subscribe(pattern=TOPIC)
+    logger.info('Successfully subscribed to Kafka topic', extra={'tags': {'subscribed_topics': list(consumer.subscription())}})
     for msg in consumer:
         alert = msg.value
         logger.debug('Received alert from stream')

@@ -10,6 +10,9 @@ import os
 import io
 import fastavro
 import requests
+import logging
+from logging.config import dictConfig
+from lcogt_logging import LCOGTFormatter
 
 """
 Convert degrees to meters so we can use geography type:
@@ -27,6 +30,30 @@ DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_USER = os.getenv('DB_USER', 'ztf')
 DB_PASS = os.getenv('DB_PASS', 'ztf')
 DB_NAME = os.getenv('DB_NAME', 'ztf')
+
+LOG_SETTINGS = {
+    "formatters": {
+        "default": {
+            "()": LCOGTFormatter
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default"
+        }
+    },
+    "loggers": {
+        "listener": {
+            "handlers": ["console"],
+            "level": logging.INFO
+        }
+    },
+    "version": 1
+}
+logging.config.dictConfig(LOG_SETTINGS)
+logger = logging.getLogger('listener')
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}'
@@ -399,7 +426,6 @@ def apply_filters(query, request):
     # Return alerts with a wall time after given date. Ex: ?time__gt=2018-07-17
     if request.args.get('time__gt'):
         a_time = Time(request.args['time__gt'], format='isot')
-        print(a_time.jd)
         query = query.filter(Alert.jd > a_time.jd)
 
     # Return alerts with a JD after given date. Ex: ?jd__gt=2458302.6906713
@@ -536,6 +562,9 @@ def cutoutScience(id, cutout):
 
 @app.route('/')
 def alerts():
+    forwarded_ips = request.headers.getlist('X-Forwarded-For')
+    client_ip = forwarded_ips[0].split(',')[0] if len(forwarded_ips) >= 1 else ''
+    logger.info('Incoming request', extra={'tags': {'requesting_ip': client_ip, 'request_args': request.args}})
     page = request.args.get('page', 1, type=int)
     query = db.session.query(Alert)
     query = apply_filters(query, request)
