@@ -69,6 +69,49 @@
     The id part of the URL comes from the "lco_id" key contained in the alert JSON.
     </p>
 
+    <h3>Querying the JSON API in bulk</h3>
+
+    <p>
+    With a POST query, you can submit multiple queries simultaneously, rather than leveraging the GET endpoint multiple
+    times. To do so, simple use the base MARS url:
+    </p>
+
+    <p><a href="https://mars.lco.global/">https://mars.lco.global/</a></p>
+
+    <p>
+    And include a list of queries in the JSON in the POST body:
+    </p>
+
+    <p>
+      <pre>
+      <code>
+        {
+          "queries": [
+            {
+              "id": 1,
+              "cone": "1,2,5"
+            },
+            {
+              "id": 2,
+              "ra_lt": 205,
+              "ra_gt": 200
+            }
+          ]
+        }
+      </code>
+      </pre>
+    </p>
+
+    <p>
+      The API will return the original query information in the response to differentiate queries. It will also ignore
+      any unsupported parameters, so you can use this to your advantage by including fields such as unique IDs (as shown
+      above) or names of queries, which you can parse later in the response.
+    </p>
+
+    <p>
+      The POST endpoint supports the same filters as are available on the basic GET endpoint.
+    </p>
+
     <h3>Working with avro files</h3>
     <p>
       ZTF uses the <a href="https://avro.apache.org/">Apache avro</a> data serialization format to distribute alerts.

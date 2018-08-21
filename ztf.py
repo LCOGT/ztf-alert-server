@@ -613,7 +613,7 @@ def alerts():
             'results': search_results
         }
 
-    if request_wants_json():
+    if request_wants_json() or request.method == 'POST':
         return jsonify(response)
     else:
         args = request.args.copy()
