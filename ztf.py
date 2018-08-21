@@ -377,148 +377,148 @@ def degrees_to_meters(degrees):
     return 2 * math.pi * EARTH_RADIUS_METERS * degrees / 360
 
 
-def apply_filters(query, request):
+def apply_filters(query, request_args):
     # Perfom a cone search. Paramter is comma seperated ra, dec origin and radius to search. Ex: ?cone=23,29,0.5
-    if request.args.get('cone'):
-        ra, dec, radius = request.args['cone'].split(',')
+    if request_args.get('cone'):
+        ra, dec, radius = request_args['cone'].split(',')
         query = query.filter(
             Alert.location.ST_DWithin(f'srid=4035;POINT({ra} {dec})', degrees_to_meters(float(radius)))
         )
 
-    if request.args.get('objectcone'):
-        objectname, radius = request.args['objectcone'].split(',')
+    if request_args.get('objectcone'):
+        objectname, radius = request_args['objectcone'].split(',')
         ra, dec = get_simbad2k_coords(objectname)
         query = query.filter(
             Alert.location.ST_DWithin(f'srid=4035;POINT({ra} {dec})', degrees_to_meters(float(radius)))
         )
 
     # Return alerts with an RA greater than a given value in degrees. Ex: ?ra__gt=20
-    if request.args.get('ra__gt'):
-        ra = float(request.args['ra__gt'])
+    if request_args.get('ra__gt'):
+        ra = float(request_args['ra__gt'])
         if ra > 180:
             ra = ra - 360
         query = query.filter(cast(Alert.location, Geometry).ST_X() > ra)
 
     # Return alerts with an RA less than a given value in degrees. Ex: ?ra__lt=20
-    if request.args.get('ra__lt'):
-        ra = float(request.args['ra__lt'])
+    if request_args.get('ra__lt'):
+        ra = float(request_args['ra__lt'])
         if ra > 180:
             ra = ra - 360
         query = query.filter(cast(Alert.location, Geometry).ST_X() < ra)
 
     # Return alerts with an Dec greater than a given value in degrees. Ex: ?dec__gt=20
-    if request.args.get('dec__gt'):
-        query = query.filter(cast(Alert.location, Geometry).ST_Y() > float(request.args['dec__gt']))
+    if request_args.get('dec__gt'):
+        query = query.filter(cast(Alert.location, Geometry).ST_Y() > float(request_args['dec__gt']))
 
     # Return alerts with an RA less than a given value in degrees. Ex: ?dec__lt=20
-    if request.args.get('dec__lt'):
-        query = query.filter(cast(Alert.location, Geometry).ST_Y() < float(request.args['dec__lt']))
+    if request_args.get('dec__lt'):
+        query = query.filter(cast(Alert.location, Geometry).ST_Y() < float(request_args['dec__lt']))
 
     # Return alerts with galactic l greater than a given value in degrees. Ex: ?l__gt=20
-    if request.args.get('l__gt'):
-        query = query.filter(Alert.gal_l > float(request.args['l__gt']))
+    if request_args.get('l__gt'):
+        query = query.filter(Alert.gal_l > float(request_args['l__gt']))
 
     # Return alerts with galactic l less than a given value in degrees. Ex: ?l__lt=20
-    if request.args.get('l__lt'):
-        query = query.filter(Alert.gal_l < float(request.args['l__lt']))
+    if request_args.get('l__lt'):
+        query = query.filter(Alert.gal_l < float(request_args['l__lt']))
 
     # Return alerts with galactic b greater than a given value in degrees. Ex: ?b__gt=20
-    if request.args.get('b__gt'):
-        query = query.filter(Alert.gal_b > float(request.args['b__gt']))
+    if request_args.get('b__gt'):
+        query = query.filter(Alert.gal_b > float(request_args['b__gt']))
 
     # Return alerts with galactic b less than a given value in degrees. Ex: ?b__lt=20
-    if request.args.get('b__lt'):
-        query = query.filter(Alert.gal_b < float(request.args['b__lt']))
+    if request_args.get('b__lt'):
+        query = query.filter(Alert.gal_b < float(request_args['b__lt']))
 
     # Return alerts with a wall time after given date. Ex: ?time__gt=2018-07-17
-    if request.args.get('time__gt'):
-        a_time = Time(request.args['time__gt'], format='isot')
+    if request_args.get('time__gt'):
+        a_time = Time(request_args['time__gt'], format='isot')
         query = query.filter(Alert.jd > a_time.jd)
 
     # Return alerts with a JD after given date. Ex: ?jd__gt=2458302.6906713
-    if request.args.get('jd__gt'):
-        query = query.filter(Alert.jd > request.args['jd__gt'])
+    if request_args.get('jd__gt'):
+        query = query.filter(Alert.jd > request_args['jd__gt'])
 
     # Return alerts with a wall time previous to a given date. Ex: ?time__lt=2018-07-17
-    if request.args.get('time__lt'):
-        a_time = Time(request.args['time__lt'], format='isot')
+    if request_args.get('time__lt'):
+        a_time = Time(request_args['time__lt'], format='isot')
         print(a_time.jd)
         query = query.filter(Alert.jd < a_time.jd)
 
     # Return alerts with a JD previous to a given date. Ex: ?jd__lt=2458302.6906713
-    if request.args.get('jd__lt'):
-        query = query.filter(Alert.jd < request.args['jd__lt'])
+    if request_args.get('jd__lt'):
+        query = query.filter(Alert.jd < request_args['jd__lt'])
 
-    if request.args.get('filter'):
-        query = query.filter(Alert.fid == FILTERS.index(request.args['filter']) + 1)
+    if request_args.get('filter'):
+        query = query.filter(Alert.fid == FILTERS.index(request_args['filter']) + 1)
 
     # Return alerts with a brightness greater than the given value. Ex: ?magpsf__lt=20
-    if request.args.get('magpsf__lte'):
-        query = query.filter(Alert.magpsf <= float(request.args['magpsf__lte']))
+    if request_args.get('magpsf__lte'):
+        query = query.filter(Alert.magpsf <= float(request_args['magpsf__lte']))
 
-    if request.args.get('magpsf__gte'):
-        query = query.filter(Alert.magpsf >= float(request.args['magpsf__gte']))
+    if request_args.get('magpsf__gte'):
+        query = query.filter(Alert.magpsf >= float(request_args['magpsf__gte']))
 
     # Return alerts with a brightness uncertainty less than the given value. Ex: ?sigmapsf__lte=0.4
-    if request.args.get('sigmapsf__lte'):
-        query = query.filter(Alert.sigmapsf <= float(request.args['sigmapsf__lte']))
+    if request_args.get('sigmapsf__lte'):
+        query = query.filter(Alert.sigmapsf <= float(request_args['sigmapsf__lte']))
 
     # Return alerts with a magnitude of object in difference image less than value. ex: ?magap__lte=0.4
-    if request.args.get('magap__lte'):
-        query = query.filter(Alert.magap <= float(request.args['magap__lte']))
+    if request_args.get('magap__lte'):
+        query = query.filter(Alert.magap <= float(request_args['magap__lte']))
 
-    if request.args.get('magap__gte'):
-        query = query.filter(Alert.magap >= float(request.args['magap__gte']))
+    if request_args.get('magap__gte'):
+        query = query.filter(Alert.magap >= float(request_args['magap__gte']))
 
     # Return alerts where the distance to the nearest source is less than value. ex: ?distnr__lte=1.0
-    if request.args.get('distnr__lte'):
-        query = query.filter(Alert.distnr <= float(request.args['distnr__lte']))
+    if request_args.get('distnr__lte'):
+        query = query.filter(Alert.distnr <= float(request_args['distnr__lte']))
 
-    if request.args.get('distnr__gte'):
-        query = query.filter(Alert.distnr >= float(request.args['distnr__gte']))
+    if request_args.get('distnr__gte'):
+        query = query.filter(Alert.distnr >= float(request_args['distnr__gte']))
 
     # Return alerts with a magnitude difference greater than the given value (abs value). Ex: ?deltamaglatest__gte=1
-    if request.args.get('deltamaglatest__gte'):
-        query = query.filter(Alert.deltamaglatest >= float(request.args['deltamaglatest__gte']))
-    if request.args.get('deltamaglatest__lte'):
-        query = query.filter(Alert.deltamaglatest <= float(request.args['deltamaglatest__lte']))
+    if request_args.get('deltamaglatest__gte'):
+        query = query.filter(Alert.deltamaglatest >= float(request_args['deltamaglatest__gte']))
+    if request_args.get('deltamaglatest__lte'):
+        query = query.filter(Alert.deltamaglatest <= float(request_args['deltamaglatest__lte']))
 
     # Return alerts with a mag diff on the reference image greater than the given value. Ex: ?deltamagref__gte=1
-    if request.args.get('deltamagref__gte'):
-        query = query.filter(Alert.deltamagref >= float(request.args['deltamagref__gte']))
+    if request_args.get('deltamagref__gte'):
+        query = query.filter(Alert.deltamagref >= float(request_args['deltamagref__gte']))
 
-    if request.args.get('deltamagref__lte'):
-        query = query.filter(Alert.deltamagref <= float(request.args['deltamagref__lte']))
+    if request_args.get('deltamagref__lte'):
+        query = query.filter(Alert.deltamagref <= float(request_args['deltamagref__lte']))
 
     # Return alerts with a real/bogus score greater or equal to the given value. Ex: ?rb__gte=0.3
-    if request.args.get('rb__gte'):
-        query = query.filter(Alert.rb >= float(request.args['rb__gte']))
+    if request_args.get('rb__gte'):
+        query = query.filter(Alert.rb >= float(request_args['rb__gte']))
 
     # Return alerts with a start/galaxy score greater or equal to the given value. Ex: ?clastar__gte=0.4
-    if request.args.get('classtar__gte'):
-        query = query.filter(Alert.classtar >= float(request.args['classtar__gte']))
+    if request_args.get('classtar__gte'):
+        query = query.filter(Alert.classtar >= float(request_args['classtar__gte']))
 
     # Return alerts with a start/galaxy score less or equal to the given value. Ex: ?clastar__lte=0.4
-    if request.args.get('classtar__lte'):
-        query = query.filter(Alert.classtar <= float(request.args['classtar__lte']))
+    if request_args.get('classtar__lte'):
+        query = query.filter(Alert.classtar <= float(request_args['classtar__lte']))
 
     # Return alerts with a fwhm less than the given value. Ex: ?fwhm__lte=1.123
-    if request.args.get('fwhm__lte'):
-        query = query.filter(Alert.fwhm <= float(request.args['fwhm__lte']))
+    if request_args.get('fwhm__lte'):
+        query = query.filter(Alert.fwhm <= float(request_args['fwhm__lte']))
 
-    if request.args.get('objectId'):
-        query = query.filter(Alert.objectId == request.args['objectId'])
+    if request_args.get('objectId'):
+        query = query.filter(Alert.objectId == request_args['objectId'])
 
-    if request.args.get('candid'):
-        query = query.filter(Alert.alert_candid == request.args['candid'])
+    if request_args.get('candid'):
+        query = query.filter(Alert.alert_candid == request_args['candid'])
 
     # Search for alerts near a PS1 object ID. Ex: ?objectidps=178183210973037920
-    if request.args.get('objectidps'):
-        psid = int(request.args['objectidps'])
+    if request_args.get('objectidps'):
+        psid = int(request_args['objectidps'])
         query = query.filter((Alert.objectidps1 == psid) | (Alert.objectidps2 == psid) | (Alert.objectidps3 == psid))
 
-    sort_by = request.args.get('sort_value', 'jd')
-    sort_order = request.args.get('sort_order', 'desc')
+    sort_by = request_args.get('sort_value', 'jd')
+    sort_order = request_args.get('sort_order', 'desc')
 
     if sort_order == 'desc':
         query = query.order_by(getattr(Alert, sort_by).desc())
@@ -574,26 +574,46 @@ def cutoutScience(id, cutout):
     )
 
 
-@app.route('/')
+@app.route('/', methods = ['GET', 'POST'])
 def alerts():
     forwarded_ips = request.headers.getlist('X-Forwarded-For')
     client_ip = forwarded_ips[0].split(',')[0] if len(forwarded_ips) >= 1 else ''
     logger.info('Incoming request', extra={'tags': {'requesting_ip': client_ip, 'request_args': request.args}})
     page = request.args.get('page', 1, type=int)
-    query = db.session.query(Alert)
-    query = apply_filters(query, request)
-    latest = db.session.query(Alert).order_by(Alert.jd.desc()).first()
+    response = {}
 
-    paginator = query.paginate(page, 100, True)
-    response = {
-        'total': paginator.total,
-        'pages': paginator.pages,
-        'has_next': paginator.has_next,
-        'has_prev': paginator.has_prev,
-        'results': Alert.serialize_list(paginator.items)
+    if request.method == 'GET':
+        query = db.session.query(Alert)
+        query = apply_filters(query, request.args)
+        latest = db.session.query(Alert).order_by(Alert.jd.desc()).first()
+        paginator = query.paginate(page, 100, True)
+        response = {
+            'total': paginator.total,
+            'pages': paginator.pages,
+            'has_next': paginator.has_next,
+            'has_prev': paginator.has_prev,
+            'results': Alert.serialize_list(paginator.items)
+        }
 
-    }
-    if request_wants_json():
+    if request.method == 'POST':
+        searches = request.get_json().get('queries')
+        search_results = []
+        total = 0
+        for search_args in searches:
+            search_result = {}
+            query = db.session.query(Alert)
+            query = apply_filters(query, search_args)
+            search_result['query'] = search_args
+            search_result['num_alerts'] = query.count()
+            search_result['results'] = Alert.serialize_list(query.all())
+            search_results.append(search_result)
+            total += search_result['num_alerts']
+        response = {
+            'total': total,
+            'results': search_results
+        }
+
+    if request_wants_json() or request.method == 'POST':
         return jsonify(response)
     else:
         args = request.args.copy()
