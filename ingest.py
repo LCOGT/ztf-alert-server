@@ -8,6 +8,7 @@ import logging
 import requests
 import base64
 import time
+from kafka.errors import CorruptRecordException
 from kafka import KafkaConsumer
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
@@ -109,12 +110,18 @@ def start_consumer():
     consumer = KafkaConsumer(bootstrap_servers=f'{PRODUCER_HOST}:{PRODUCER_PORT}', group_id=GROUP_ID)
     consumer.subscribe(pattern=TOPIC)
     logger.info('Successfully subscribed to Kafka topic', extra={'tags': {'subscribed_topics': list(consumer.subscription())}})
-    for msg in consumer:
-        alert = msg.value
-        logger.debug('Received alert from stream')
-        do_ingest(base64.b64encode(alert).decode('UTF-8'))
-        consumer.commit()
-        logger.debug('Committed index to Kafka producer')
+    while True:
+        try:
+            msg = next(consumer)
+            alert = msg.value
+            logger.debug('Received alert from stream')
+            do_ingest(base64.b64encode(alert).decode('UTF-8'))
+            consumer.commit()
+            logger.debug('Committed index to Kafka producer')
+        except CorruptRecordException:
+            logger.info('Got a Corrupt Record')
+        except StopIteration:
+            pass
 
 
 if __name__ == '__main__':
