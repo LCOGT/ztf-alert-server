@@ -178,6 +178,7 @@ class Alert(db.Model):
     neargaiabright = db.Column(db.Float, nullable=True, default=None)
     maggaia = db.Column(db.Float, nullable=True, default=None)
     maggaiabright = db.Column(db.Float, nullable=True, default=None)
+    exptime = db.Column(db.Float, nullable=True, default=None)
 
     @property
     def ra(self):
@@ -351,6 +352,7 @@ class Alert(db.Model):
                 'neargaiabright': self.neargaiabright,
                 'maggaia': self.maggaia,
                 'maggaiabright': self.maggaiabright,
+                'exptime': self.exptime,
             }
         }
         if prv_candidate:
