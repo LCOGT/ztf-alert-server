@@ -107,7 +107,7 @@ def packet_path(packet):
 
 
 def start_consumer():
-    consumer = KafkaConsumer(bootstrap_servers=f'{PRODUCER_HOST}:{PRODUCER_PORT}', group_id=GROUP_ID)
+    consumer = KafkaConsumer(bootstrap_servers=f'{PRODUCER_HOST}:{PRODUCER_PORT}', group_id=GROUP_ID, auto_offset_reset='earliest')
     consumer.subscribe(pattern=TOPIC)
     logger.info('Successfully subscribed to Kafka topic', extra={'tags': {'subscribed_topics': list(consumer.subscription())}})
     while True:
