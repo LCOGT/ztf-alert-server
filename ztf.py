@@ -4,6 +4,7 @@ from geoalchemy2 import Geography, Geometry, shape
 from sqlalchemy import cast
 from urllib.parse import urlencode
 from astropy.time import Time
+from datetime import datetime, timedelta
 import math
 import json
 import os
@@ -51,7 +52,7 @@ LOG_SETTINGS = {
     },
     "version": 1
 }
-logging.config.dictConfig(LOG_SETTINGS)
+dictConfig(LOG_SETTINGS)
 logger = logging.getLogger('listener')
 
 
@@ -444,12 +445,17 @@ def apply_filters(query, request_args):
     # Return alerts with a wall time previous to a given date. Ex: ?time__lt=2018-07-17
     if request_args.get('time__lt'):
         a_time = Time(request_args['time__lt'], format='isot')
-        print(a_time.jd)
         query = query.filter(Alert.jd < a_time.jd)
 
     # Return alerts with a JD previous to a given date. Ex: ?jd__lt=2458302.6906713
     if request_args.get('jd__lt'):
         query = query.filter(Alert.jd < request_args['jd__lt'])
+
+    # Return alerts from the previous x seconds
+    if request_args.get('time__since'):
+        time_since = datetime.utcnow() - timedelta(seconds=int(request_args['time__since']))
+        a_time = Time(time_since)
+        query = query.filter(Alert.jd > a_time.jd)
 
     if request_args.get('filter'):
         query = query.filter(Alert.fid == FILTERS.index(request_args['filter']) + 1)
@@ -576,7 +582,7 @@ def cutoutScience(id, cutout):
     )
 
 
-@app.route('/', methods = ['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def alerts():
     forwarded_ips = request.headers.getlist('X-Forwarded-For')
     client_ip = forwarded_ips[0].split(',')[0] if len(forwarded_ips) >= 1 else ''
