@@ -23,7 +23,7 @@
               {% for prv_alert in alert.prv_candidate %}
               <tr>
                 <td><a href="/{{ prv_alert.id }}">{{ prv_alert.id }}</td>
-                <td>{{ prv_alert.jd }}</td>
+                <td>{{ prv_alert.wall_time }}</td>
                 <td>{{ prv_alert.filter }}</td>
               </tr>
               {% endfor %}
@@ -123,11 +123,19 @@
     })
 
     var mags = matches.map(function(match){
-      return match.candidate.magpsf.toFixed(2);
+      if ("magpsf" in match.candidate) {
+        return match.candidate.magpsf.toFixed(2);
+      } else {
+        return match.candidate.diffmaglim.toFixed(2);
+      }
     });
 
     var mag_err = matches.map(function(match){
-      return match.candidate.sigmapsf.toFixed(2);
+      if ("sigmapsf" in match.candidate) {
+        return match.candidate.sigmapsf.toFixed(2);
+      } else {
+        return 0;
+      }
     });
 
     var jds = matches.map(function(match){
@@ -159,6 +167,7 @@
     }
   }
 
+
   function buildPlot(data){
     var fids = data.prv_candidate.map(function(prv_candidate){
       return prv_candidate.candidate.fid;
@@ -175,6 +184,22 @@
       plot_data.push(buildSeries(data, fids[i]));
     }
 
+    var arrows = data.prv_candidate.map(function(match){
+      if (!("candid" in match.candidate)) {
+        return {
+          x: jdToDate(match.candidate.jd),
+          y: match.candidate.diffmaglim,
+          text: 'Non-Detection',
+          showarrow: true,
+          arrowhead: 3,
+          yshift: -40,
+          arrowcolor: filter_colors[match.candidate.fid - 1],
+          ax: 0,
+          ay: -50
+        };
+      }
+    });
+
     var layout = {
       title: 'Light Curve',
       yaxis:{
@@ -183,7 +208,8 @@
       },
       xaxis:{
         title: 'date',
-      }
+      },
+      annotations: arrows
     }
     Plotly.newPlot('lightcurve', plot_data, layout);
   }

@@ -1,0 +1,1 @@
+CREATE INDEX ix_alert_nbad ON alert USING btree(nbad);

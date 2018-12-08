@@ -62,6 +62,38 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
+class NonDetection(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    objectId = db.Column(db.String(50), index=True)
+    diffmaglim = db.Column(db.Float, nullable=False)
+    jd = db.Column(db.Float, nullable=False, index=True)
+    fid = db.Column(db.Integer, nullable=False)
+
+    @property
+    def wall_time(self):
+        t = Time(self.jd, format='jd')
+        return t.datetime
+
+    @property
+    def filter(self):
+        return FILTERS[self.fid - 1]
+
+    def serialized(self):
+        return {
+            'candidate': {
+                'id': self.id,
+                'objectId': self.objectId,
+                'diffmaglim': self.diffmaglim,
+                'jd': self.jd,
+                'fid': self.fid
+            }
+        }
+
+    @staticmethod
+    def serialize_list(non_detections):
+        return [nd.serialized() for nd in non_detections]
+
+
 class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     publisher = db.Column(db.String(200), nullable=False, default='')
@@ -109,7 +141,7 @@ class Alert(db.Model):
     bimagerat = db.Column(db.Float, nullable=True, default=None)
     elong = db.Column(db.Float, nullable=True, default=None, index=True)
     nneg = db.Column(db.Integer, nullable=True, default=None)
-    nbad = db.Column(db.Integer, nullable=True, default=None)
+    nbad = db.Column(db.Integer, nullable=True, default=None, index=True)
     rb = db.Column(db.Float, nullable=True, default=None, index=True)
     rbversion = db.Column(db.String(200), nullable=False, default='')
     ssdistnr = db.Column(db.Float, nullable=True, default=None, index=True)
@@ -200,6 +232,13 @@ class Alert(db.Model):
             Alert.location.ST_DWithin(f'srid=4035;{point}', degrees_to_meters(PRV_CANDIDATES_RADIUS))
         )
         return query.order_by(Alert.jd.desc())
+
+    @property
+    def non_detection(self):
+        query = db.session.query(NonDetection).filter(
+            NonDetection.objectId == self.objectId
+        )
+        return query.order_by(NonDetection.jd.desc())
 
     @property
     def wall_time(self):
@@ -357,8 +396,25 @@ class Alert(db.Model):
             }
         }
         if prv_candidate:
-            alert['prv_candidate'] = Alert.serialize_list(self.prv_candidate)
+            prv_candidate = Alert.serialize_list(self.prv_candidate)
+            non_detections = NonDetection.serialize_list(self.non_detection)
+            Alert.add_candidates(prv_candidate, non_detections)
+            alert['prv_candidate'] = prv_candidate
         return alert
+
+    @staticmethod
+    def add_candidates(candidates, new_candidates):
+        for candidate in new_candidates:
+            low = 0
+            high = len(candidates)
+            while low < high:
+                mid = (low+high)//2
+                if candidates[mid]['candidate']['jd'] < candidate['candidate']['jd']:
+                    low = mid+1
+                else:
+                    high = mid
+            candidates.insert(low, candidate)
+        return candidates
 
     @staticmethod
     def serialize_list(alerts):
@@ -513,6 +569,14 @@ def apply_filters(query, request_args):
     # Return alerts with a fwhm less than the given value. Ex: ?fwhm__lte=1.123
     if request_args.get('fwhm__lte'):
         query = query.filter(Alert.fwhm <= float(request_args['fwhm__lte']))
+
+    # Return alerts with a number of bad pixels less than or equal to the given value. Ex: ?nbad__lte=3
+    if request_args.get('nbad__lte'):
+        query = query.filter(Alert.nbad <= request_args['nbad__lte'])
+
+    # Return alerts with a elong less than or equal to the given value. Ex: ?elong__lte=1.2
+    if request_args.get('elong__lte'):
+        query = query.filter(Alert.elong <= float(request_args['elong__lte']))
 
     if request_args.get('objectId'):
         query = query.filter(Alert.objectId == request_args['objectId'])
