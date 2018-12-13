@@ -221,6 +221,14 @@
         </div>
       </div>
       <div class="form-group">
+        <label for="elong__lte">elong &lt;= </label>
+        <input type="number" step="any" class="form-control form-control-sm" id="elong__lte" name="elong__lte" value="{{ request.args.elong__lte }}">
+      </div>
+      <div class="form-group">
+        <label for="nbad__lte">nbad &lt;= </label>
+        <input type="number" step="any" class="form-control form-control-sm" id="nbad__lte" name="nbad__lte" value="{{ request.args.nbad__lte }}">
+      </div>
+      <div class="form-group">
         <label for="rb__gte">rb &gt;= </label>
         <input type="number" step="any" class="form-control form-control-sm" id="rb__gte" name="rb__gte" value="{{ request.args.rb__gte }}">
       </div>

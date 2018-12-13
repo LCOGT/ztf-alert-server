@@ -15,7 +15,7 @@ from astropy.time import Time
 from botocore.exceptions import ClientError
 from sqlalchemy import exc
 
-from ztf import Alert, db, app, logger
+from ztf import Alert, NonDetection, db, app, logger
 
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
@@ -56,10 +56,21 @@ def ingest_avro(packet):
         deltamaglatest = None
         if packet['prv_candidates']:
             prv_candidates = sorted(packet['prv_candidates'], key=lambda x: x['jd'], reverse=True)
+            non_detections = {}
             for candidate in prv_candidates:
-                if packet['candidate']['fid'] == candidate['fid'] and candidate['magpsf']:
+                if all(candidate[key] is None for key in ('candid', 'isdiffpos', 'ra', 'dec', 'magpsf', 'sigmapsf', 'ranr', 'decnr')):
+                    non_detections[packet['objectId'] + str(candidate['jd'])] = NonDetection(
+                        objectId=packet['objectId'],
+                        jd=candidate['jd'],
+                        diffmaglim=candidate['diffmaglim'],
+                        fid=candidate['fid']
+                    )
+                elif not deltamaglatest and packet['candidate']['fid'] == candidate['fid'] and candidate['magpsf']:
                     deltamaglatest = packet['candidate']['magpsf'] - candidate['magpsf']
-                    break
+            for key, nd in non_detections.items():
+                count = db.session.query(NonDetection).filter(NonDetection.objectId == nd.objectId).filter(NonDetection.jd==nd.jd).count()
+                if count == 0:
+                    db.session.add(nd)
 
         deltamagref = None
         if packet['candidate']['distnr'] < 2:
