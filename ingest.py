@@ -1,13 +1,11 @@
 #!/bin/env python
 import fastavro
-import sys
 import io
 import boto3
 import os
 import logging
-import requests
 import base64
-import time
+from datetime import datetime, timedelta
 from kafka.errors import CorruptRecordException
 from kafka import KafkaConsumer
 from astropy.coordinates import SkyCoord
@@ -90,7 +88,8 @@ def ingest_avro(packet):
         try:
             db.session.add(alert)
             db.session.commit()
-            logger.info('Successfully inserted object', extra={'tags': {'candid': alert.alert_candid}})
+            ingest_delay = datetime.now() - alert.wall_time
+            logger.info('Successfully inserted object', extra={'tags': {'candid': alert.alert_candid, 'ingest_delay': str(ingest_delay), 'ingest_delay_seconds': ingest_delay.total_seconds()}})
         except exc.SQLAlchemyError:
             db.session.rollback()
             logger.warn('Failed to insert object', extra={'tags': {'candid': alert.alert_candid}})
