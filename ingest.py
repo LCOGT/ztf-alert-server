@@ -126,7 +126,6 @@ def start_consumer():
             alert = msg.value
             logger.debug('Received alert from stream')
             do_ingest(base64.b64encode(alert).decode('UTF-8'))
-            consumer.commit()
             logger.debug('Committed index to Kafka producer')
         except CorruptRecordException:
             logger.info('Got a Corrupt Record')
