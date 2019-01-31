@@ -105,7 +105,7 @@ def ingest_avro(packet):
             db.session.rollback()
             logger.warn('Failed to insert object', extra={'tags': {
                 'candid': alert.alert_candid,
-                'sql_error': e
+                'sql_error': str(e)
             }})
 
 
