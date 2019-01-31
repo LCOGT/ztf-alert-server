@@ -5,7 +5,7 @@ import boto3
 import os
 import logging
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 from confluent_kafka import Consumer
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
@@ -28,7 +28,7 @@ s3 = session.resource('s3')
 
 # ZTF Kafka Configuration
 TOPIC = '^(ztf_[0-9]{8}_programid1)'
-GROUP_ID = 'LCOGT'
+GROUP_ID = os.getenv('GROUP_ID', default='LCOGT-test')
 PRODUCER_HOST = 'public.alerts.ztf.uw.edu'
 PRODUCER_PORT = '9092'
 
@@ -130,19 +130,38 @@ def packet_path(packet):
     )
 
 
+def update_topic_list(consumer, current_topic_date=None):
+    current_date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    if current_topic_date is None or (current_date - current_topic_date).days > 0:
+        current_topics = []
+        for i in range(0, 7):
+            topic_date = current_date - timedelta(days=i)
+            current_topics.append('ztf_{}{:02}{:02}_programid1'.format(
+                topic_date.year,
+                topic_date.month,
+                topic_date.day
+            ))
+        consumer.subscribe(current_topics)
+        logger.info('New topics', extra={'tags': {
+            'subscribed_topics': current_topics,
+            'subscribed_topics_count': len(consumer.assignment())
+        }})
+        return current_date
+
+
 def start_consumer():
     consumer = Consumer({
         'bootstrap.servers': f'{PRODUCER_HOST}:{PRODUCER_PORT}',
         'group.id': GROUP_ID,
         'auto.offset.reset': 'earliest'
     })
-    consumer.subscribe([TOPIC])
+    update_topic_list(consumer)
+    current_date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
     while True:
+        current_date = update_topic_list(consumer, current_topic_date=current_date)
+        logger.info(current_date)
         msg = consumer.poll(10)
-        logger.info('Successfully subscribed to Kafka topics', extra={'tags': {
-            'subscribed_topics_count': len(consumer.assignment())
-        }})
         if msg is None:
             continue
         if msg.error():
