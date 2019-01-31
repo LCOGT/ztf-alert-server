@@ -5,9 +5,8 @@ import boto3
 import os
 import logging
 import base64
-from datetime import datetime, timedelta
-from kafka.errors import CorruptRecordException
-from kafka import KafkaConsumer
+from datetime import datetime
+from confluent_kafka import Consumer
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from botocore.exceptions import ClientError
@@ -28,7 +27,7 @@ session = boto3.Session(
 s3 = session.resource('s3')
 
 # ZTF Kafka Configuration
-TOPIC = '^(ztf_\d{8}_programid1)'
+TOPIC = '^(ztf_[0-9]{8}_programid1)'
 GROUP_ID = 'LCOGT'
 PRODUCER_HOST = 'public.alerts.ztf.uw.edu'
 PRODUCER_PORT = '9092'
@@ -38,9 +37,17 @@ def do_ingest(encoded_packet):
     f_data = base64.b64decode(encoded_packet)
     freader = fastavro.reader(io.BytesIO(f_data))
     for packet in freader:
+        start_ingest = datetime.now()
         ingest_avro(packet)
+        logger.info('Time to ingest avro', extra={'tags': {
+            'ingest_time': (datetime.now() - start_ingest).total_seconds()
+        }})
         fname = '{}.avro'.format(packet['candid'])
+        start_upload = datetime.now()
         upload_avro(io.BytesIO(f_data), fname, packet)
+        logger.info('Time to upload avro', extra={'tags': {
+            'upload_time': (datetime.now() - start_upload).total_seconds()
+        }})
 
 
 def ingest_avro(packet):
@@ -89,10 +96,17 @@ def ingest_avro(packet):
             db.session.add(alert)
             db.session.commit()
             ingest_delay = datetime.now() - alert.wall_time
-            logger.info('Successfully inserted object', extra={'tags': {'candid': alert.alert_candid, 'ingest_delay': str(ingest_delay), 'ingest_delay_seconds': ingest_delay.total_seconds()}})
-        except exc.SQLAlchemyError:
+            logger.info('Successfully inserted object', extra={'tags': {
+                'candid': alert.alert_candid,
+                'ingest_delay': str(ingest_delay),
+                'ingest_delay_seconds': ingest_delay.total_seconds()
+            }})
+        except exc.SQLAlchemyError as e:
             db.session.rollback()
-            logger.warn('Failed to insert object', extra={'tags': {'candid': alert.alert_candid}})
+            logger.warn('Failed to insert object', extra={'tags': {
+                'candid': alert.alert_candid,
+                'sql_error': str(e)
+            }})
 
 
 def upload_avro(f, fname, packet):
@@ -117,20 +131,33 @@ def packet_path(packet):
 
 
 def start_consumer():
-    consumer = KafkaConsumer(bootstrap_servers=f'{PRODUCER_HOST}:{PRODUCER_PORT}', group_id=GROUP_ID, auto_offset_reset='earliest')
-    consumer.subscribe(pattern=TOPIC)
-    logger.info('Successfully subscribed to Kafka topic', extra={'tags': {'subscribed_topics': list(consumer.subscription())}})
+    consumer = Consumer({
+        'bootstrap.servers': f'{PRODUCER_HOST}:{PRODUCER_PORT}',
+        'group.id': GROUP_ID,
+        'auto.offset.reset': 'earliest'
+    })
+    consumer.subscribe([TOPIC])
+
     while True:
-        try:
-            msg = next(consumer)
-            alert = msg.value
-            logger.debug('Received alert from stream')
-            do_ingest(base64.b64encode(alert).decode('UTF-8'))
-            logger.debug('Committed index to Kafka producer')
-        except CorruptRecordException:
-            logger.info('Got a Corrupt Record')
-        except StopIteration:
-            pass
+        msg = consumer.poll(10)
+        logger.info('Successfully subscribed to Kafka topics', extra={'tags': {
+            'subscribed_topics_count': len(consumer.assignment())
+        }})
+        if msg is None:
+            continue
+        if msg.error():
+            logger.error('Consumer error: {}'.format(msg.error()))
+            continue
+
+        process_start_time = datetime.now()
+        alert = base64.b64encode(msg.value()).decode('utf-8')
+        logger.debug('Received alert from stream')
+        do_ingest(alert)
+        logger.info('Finished processing kafka message', extra={'tags': {
+            'record_processing_time': (datetime.now() - process_start_time).total_seconds()
+        }})
+
+    consumer.close()
 
 
 if __name__ == '__main__':

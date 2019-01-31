@@ -7,6 +7,5 @@ astropy
 boto3
 requests
 shapely
-kafka-python
-lz4tools
 lcogt-logging
+confluent_kafka
