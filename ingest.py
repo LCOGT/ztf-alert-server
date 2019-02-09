@@ -3,7 +3,6 @@ import fastavro
 import io
 import boto3
 import os
-import logging
 import base64
 from datetime import datetime, timedelta
 from confluent_kafka import Consumer
@@ -38,16 +37,17 @@ def do_ingest(encoded_packet):
     freader = fastavro.reader(io.BytesIO(f_data))
     for packet in freader:
         start_ingest = datetime.now()
-        ingest_avro(packet)
-        logger.info('Time to ingest avro', extra={'tags': {
-            'ingest_time': (datetime.now() - start_ingest).total_seconds()
-        }})
-        fname = '{}.avro'.format(packet['candid'])
-        start_upload = datetime.now()
-        upload_avro(io.BytesIO(f_data), fname, packet)
-        logger.info('Time to upload avro', extra={'tags': {
-            'upload_time': (datetime.now() - start_upload).total_seconds()
-        }})
+        successful_ingestion = ingest_avro(packet)
+        if successful_ingestion:
+            logger.info('Time to ingest avro', extra={'tags': {
+                'ingest_time': (datetime.now() - start_ingest).total_seconds()
+            }})
+            fname = '{}.avro'.format(packet['candid'])
+            start_upload = datetime.now()
+            upload_avro(io.BytesIO(f_data), fname, packet)
+            logger.info('Time to upload avro', extra={'tags': {
+                'upload_time': (datetime.now() - start_upload).total_seconds()
+            }})
 
 
 def ingest_avro(packet):
@@ -101,12 +101,14 @@ def ingest_avro(packet):
                 'ingest_delay': str(ingest_delay),
                 'ingest_delay_seconds': ingest_delay.total_seconds()
             }})
+            return True
         except exc.SQLAlchemyError as e:
             db.session.rollback()
             logger.warn('Failed to insert object', extra={'tags': {
                 'candid': alert.alert_candid,
                 'sql_error': str(e)
             }})
+            return False
 
 
 def upload_avro(f, fname, packet):
@@ -142,14 +144,30 @@ def update_topic_list(consumer, current_topic_date=None):
                 topic_date.day
             ))
         consumer.subscribe(current_topics)
+
         logger.info('New topics', extra={'tags': {
-            'subscribed_topics': current_topics,
+            'subscribed_topics': ['{0} - {1}'.format(topic.topic, topic.partition) for topic in consumer.assignment()],
             'subscribed_topics_count': len(consumer.assignment())
         }})
+        full_topic_information = {}
+        for topic_partition in consumer.assignment():
+            topic_key = '{0} - {1}'.format(topic_partition.topic, topic_partition.partition)
+            watermarks = consumer.get_watermark_offsets(topic_partition)
+            position = consumer.position([topic_partition])
+            topic_information = {
+                'low_watermark': watermarks[0],
+                'consumer_offset': position[0].offset,
+                'high_watermark': watermarks[1]
+            }
+            full_topic_information[topic_key] = topic_information
+        logger.info('Partition information', extra={'tags': full_topic_information})
         return current_date
 
 
 def start_consumer():
+    logger.info('Starting consumer', extra={'tags': {
+        'group_id': GROUP_ID
+    }})
     consumer = Consumer({
         'bootstrap.servers': f'{PRODUCER_HOST}:{PRODUCER_PORT}',
         'group.id': GROUP_ID,
@@ -161,7 +179,7 @@ def start_consumer():
     while True:
         current_date = update_topic_list(consumer, current_topic_date=current_date)
         logger.info(current_date)
-        msg = consumer.poll(10)
+        msg = consumer.poll(1)
         if msg is None:
             continue
         if msg.error():
@@ -170,7 +188,7 @@ def start_consumer():
 
         process_start_time = datetime.now()
         alert = base64.b64encode(msg.value()).decode('utf-8')
-        logger.debug('Received alert from stream')
+        logger.info('Received alert from stream')
         do_ingest(alert)
         logger.info('Finished processing kafka message', extra={'tags': {
             'record_processing_time': (datetime.now() - process_start_time).total_seconds()
