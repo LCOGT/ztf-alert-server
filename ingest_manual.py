@@ -32,6 +32,7 @@ if __name__ == '__main__':
     db.create_all()
     start_date = datetime.strptime(sys.argv[1], '%Y%m%d')
     end_date = datetime.strptime(sys.argv[2], '%Y%m%d')
-    for i in range(0, (end_date - start_date).days):
+    for i in range(0, (end_date - start_date).days + 1):
         url = get_ztf_url(start_date + timedelta(days=i))
         read_avros(url)
+
