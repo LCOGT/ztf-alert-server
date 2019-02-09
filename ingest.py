@@ -161,7 +161,7 @@ def update_topic_list(consumer, current_topic_date=None):
             }
             full_topic_information[topic_key] = topic_information
         logger.info('Partition information', extra={'tags': full_topic_information})
-        return current_date
+    return current_date
 
 
 def start_consumer():
@@ -173,8 +173,7 @@ def start_consumer():
         'group.id': GROUP_ID,
         'auto.offset.reset': 'earliest'
     })
-    update_topic_list(consumer)
-    current_date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    current_date = update_topic_list(consumer)
 
     while True:
         current_date = update_topic_list(consumer, current_topic_date=current_date)
