@@ -99,14 +99,16 @@ def ingest_avro(packet):
             logger.info('Successfully inserted object', extra={'tags': {
                 'candid': alert.alert_candid,
                 'ingest_delay': str(ingest_delay),
-                'ingest_delay_seconds': ingest_delay.total_seconds()
+                'ingest_delay_seconds': ingest_delay.total_seconds(),
+                'successful_ingest': 'true'
             }})
             return True
         except exc.SQLAlchemyError as e:
             db.session.rollback()
             logger.warn('Failed to insert object', extra={'tags': {
                 'candid': alert.alert_candid,
-                'sql_error': str(e)
+                'sql_error': str(e),
+                'successful_ingest': 'false'
             }})
             return False
 
@@ -120,9 +122,15 @@ def upload_avro(f, fname, packet):
             ContentDisposition=f'attachment; filename={filename}',
             ContentType='avro/binary'
         )
-        logger.info('Successfully uploaded file to s3', extra={'tags': {'filename': filename}})
+        logger.info('Successfully uploaded file to s3', extra={'tags': {
+            'filename': filename,
+            'successful_upload': 'true'
+        }})
     except ClientError:
-        logger.warn('Failed to upload file to s3', extra={'tags': {'filename': filename}})
+        logger.warn('Failed to upload file to s3', extra={'tags': {
+            'filename': filename,
+            'successful_upload': 'false'
+        }})
 
 
 def packet_path(packet):
