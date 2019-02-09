@@ -169,6 +169,10 @@ def update_topic_list(consumer, current_topic_date=None):
             }
             full_topic_information[topic_key] = topic_information
         logger.info('Partition information', extra={'tags': full_topic_information})
+    logger.info('Current topics', extra={'tags': {
+            'subscribed_topics': ['{0} - {1}'.format(topic.topic, topic.partition) for topic in consumer.assignment()],
+            'subscribed_topics_count': len(consumer.assignment())
+        }})
     return current_date
 
 
@@ -198,7 +202,8 @@ def start_consumer():
         logger.info('Received alert from stream')
         do_ingest(alert)
         logger.info('Finished processing kafka message', extra={'tags': {
-            'record_processing_time': (datetime.now() - process_start_time).total_seconds()
+            'record_processing_time': (datetime.now() - process_start_time).total_seconds(),
+            'processing_latency': datetime.now().timestamp() - msg.timestamp()[1]/1000
         }})
 
     consumer.close()
