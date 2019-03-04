@@ -157,18 +157,6 @@ def update_topic_list(consumer, current_topic_date=None):
             'subscribed_topics': ['{0} - {1}'.format(topic.topic, topic.partition) for topic in consumer.assignment()],
             'subscribed_topics_count': len(consumer.assignment())
         }})
-        full_topic_information = {}
-        for topic_partition in consumer.assignment():
-            topic_key = '{0} - {1}'.format(topic_partition.topic, topic_partition.partition)
-            watermarks = consumer.get_watermark_offsets(topic_partition)
-            position = consumer.position([topic_partition])
-            topic_information = {
-                'low_watermark': watermarks[0],
-                'consumer_offset': position[0].offset,
-                'high_watermark': watermarks[1]
-            }
-            full_topic_information[topic_key] = topic_information
-        logger.info('Partition information', extra={'tags': full_topic_information})
     logger.info('Current topics', extra={'tags': {
             'subscribed_topics': ['{0} - {1}'.format(topic.topic, topic.partition) for topic in consumer.assignment()],
             'subscribed_topics_count': len(consumer.assignment())
