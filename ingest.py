@@ -4,6 +4,7 @@ import io
 import boto3
 import os
 import base64
+import time
 from datetime import datetime, timedelta
 from confluent_kafka import Consumer
 from astropy.coordinates import SkyCoord
@@ -157,10 +158,6 @@ def update_topic_list(consumer, current_topic_date=None):
             'subscribed_topics': ['{0} - {1}'.format(topic.topic, topic.partition) for topic in consumer.assignment()],
             'subscribed_topics_count': len(consumer.assignment())
         }})
-    logger.info('Current topics', extra={'tags': {
-            'subscribed_topics': ['{0} - {1}'.format(topic.topic, topic.partition) for topic in consumer.assignment()],
-            'subscribed_topics_count': len(consumer.assignment())
-        }})
     return current_date
 
 
@@ -176,8 +173,8 @@ def start_consumer():
     current_date = update_topic_list(consumer)
 
     while True:
-        current_date = update_topic_list(consumer, current_topic_date=current_date)
-        logger.info(current_date)
+        if int(time.time()) % 300 == 0:
+            current_date = update_topic_list(consumer, current_topic_date=current_date)
         msg = consumer.poll(1)
         if msg is None:
             continue
