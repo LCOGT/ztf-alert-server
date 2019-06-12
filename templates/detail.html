@@ -91,7 +91,8 @@
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript">
   var filters = ['g', 'r', 'i'];
-  var filter_colors = ['green', 'red', 'black'];
+  // var filter_colors = ['green', 'red', 'black'];
+  var filter_colorway = [[1, 'rgb(0, 255, 0)'],[2, 'rgb(255, 0, 0)'],[3, 'rgb(0, 0, 0)']]
   var unix_epoch_julian_day = 2440587;
   var day = 86400000;
 
@@ -118,30 +119,39 @@
   }
 
   function buildSeries(data, fid){
+
+    // Finds all previous candidates of this object with the same filter that are not non-detections
     var matches = data.prv_candidate.filter(function(match){
-      return match.candidate.fid === fid;
-    })
+      return match.candidate.fid === fid && "magpsf" in match.candidate;
+    });
 
+    // Gets the magpsf value of all matching previous candidates
     var mags = matches.map(function(match){
-      if ("magpsf" in match.candidate) {
-        return match.candidate.magpsf.toFixed(2);
-      } else {
-        return match.candidate.diffmaglim.toFixed(2);
-      }
+      return match.candidate.magpsf.toFixed(2);
     });
 
+    // Gets the error of the magpsf value of all matching previous candidates
     var mag_err = matches.map(function(match){
-      if ("sigmapsf" in match.candidate) {
-        return match.candidate.sigmapsf.toFixed(2);
-      } else {
-        return 0;
-      }
+      return match.candidate.sigmapsf.toFixed(2);
     });
 
+    // Gets the timestamp of all matching previous candidates
     var jds = matches.map(function(match){
       return match.candidate.jd;
     });
 
+    // Builds an array of the correct symbol for each matching previous candidate
+    // An isDiffPos value of t or 1 indicates a positive subtraction, represented by a full circle
+    // An isDiffPos value of f or 0 indicates a negative subtraction, represented by an empty circle
+    var symbols = matches.map(function(match){
+      if (['t', '1'].includes(match.candidate.isDiffPos)) {
+        return 'circle';
+      } else {
+        return 'circle-open';
+      }
+    });
+
+    // Adds the candidate data for that filter to the previously constructed arrays
     if(data.candidate.fid === fid){
       mags.push(data.candidate.magpsf.toFixed(2));
       mag_err.push(data.candidate.sigmapsf.toFixed(2));
@@ -156,13 +166,15 @@
         type: 'data',
         array: mag_err,
         visible: true,
-        color: filter_colors[fid - 1]
+        color: filter_colorway[fid - 1][1]
       },
       mode: 'markers',
       type: 'scatter',
       name: filters[fid - 1],
       marker:{
-        color: filter_colors[fid - 1]
+        symbol: symbols,
+        color: filter_colorway[fid - 1][1],
+        size: 9
       }
     }
   }
@@ -184,18 +196,21 @@
       plot_data.push(buildSeries(data, fids[i]));
     }
 
-    var arrows = data.prv_candidate.map(function(match){
-      if (!("candid" in match.candidate)) {
-        return {
-          x: jdToDate(match.candidate.jd),
-          y: match.candidate.diffmaglim,
-          showarrow: true,
-          arrowhead: 3,
-          yshift: -40,
-          arrowcolor: filter_colors[match.candidate.fid - 1],
-          ax: 0,
-          ay: -50
-        };
+    non_detections = data.prv_candidate.filter(function(match){
+      return !("candid" in match.candidate);
+    });
+
+    plot_data.push({
+      x: non_detections.map(function(nd){return jdToDate(nd.candidate.jd);}),
+      y: non_detections.map(function(nd){return nd.candidate.diffmaglim;}),
+      mode: 'markers',
+      type: 'scatter',
+      name: 'non-detections',
+      marker: {
+        symbol: 'triangle-down',
+        color: non_detections.map(function(nd){return nd.candidate.fid}),
+        colorway: filter_colorway,
+        opacity: 0.5
       }
     });
 
@@ -208,7 +223,20 @@
       xaxis:{
         title: 'date',
       },
-      annotations: arrows
+      annotations: non_detections.map(function(nd) {
+        return {
+          x: jdToDate(nd.candidate.jd),
+          y: nd.candidate.diffmaglim,
+          showarrow: true,
+          arrowhead: 3,
+          arrowsize: 1.5,
+          arrowcolor: filter_colorway[nd.candidate.fid - 1][1],
+          ax: 0,
+          ay: -100,
+          yshift: -20,
+          opacity: 0.5
+        }
+      })
     }
     Plotly.newPlot('lightcurve', plot_data, layout);
   }
