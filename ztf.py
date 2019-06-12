@@ -144,6 +144,8 @@ class Alert(db.Model):
     nbad = db.Column(db.Integer, nullable=True, default=None, index=True)
     rb = db.Column(db.Float, nullable=True, default=None, index=True)
     rbversion = db.Column(db.String(200), nullable=False, default='')
+    drb = db.Column(db.Float, nullable=True, default=None, index=True)
+    drbversion = db.Column(db.String(200), nullable=False, default='')
     ssdistnr = db.Column(db.Float, nullable=True, default=None, index=True)
     ssmagnr = db.Column(db.Float, nullable=True, default=None)
     ssnamenr = db.Column(db.String(200), nullable=False, default='')
@@ -335,6 +337,8 @@ class Alert(db.Model):
                 'nbad': self.nbad,
                 'rb': self.rb,
                 'rbversion': self.rbversion,
+                'drb': self.drb,
+                'drbversion': self.drbversion,
                 'ssdistnr': self.ssdistnr,
                 'ssmagnr': self.ssmagnr,
                 'ssnamenr': self.ssnamenr,

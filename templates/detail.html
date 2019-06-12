@@ -91,8 +91,7 @@
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript">
   var filters = ['g', 'r', 'i'];
-  // var filter_colors = ['green', 'red', 'black'];
-  var filter_colorway = [[1, 'rgb(0, 255, 0)'],[2, 'rgb(255, 0, 0)'],[3, 'rgb(0, 0, 0)']]
+  var filter_colorscale = [[0, 'rgb(0, 255, 0)'],[0.5, 'rgb(255, 0, 0)'],[1, 'rgb(0, 0, 255)']]
   var unix_epoch_julian_day = 2440587;
   var day = 86400000;
 
@@ -151,7 +150,7 @@
       }
     });
 
-    // Adds the candidate data for that filter to the previously constructed arrays
+    // Adds the current candidate data for that filter to the previously constructed arrays
     if(data.candidate.fid === fid){
       mags.push(data.candidate.magpsf.toFixed(2));
       mag_err.push(data.candidate.sigmapsf.toFixed(2));
@@ -166,14 +165,14 @@
         type: 'data',
         array: mag_err,
         visible: true,
-        color: filter_colorway[fid - 1][1]
+        color: filter_colorscale[fid - 1][1]
       },
       mode: 'markers',
       type: 'scatter',
       name: filters[fid - 1],
       marker:{
         symbol: symbols,
-        color: filter_colorway[fid - 1][1],
+        color: filter_colorscale[fid - 1][1],
         size: 9
       }
     }
@@ -208,9 +207,10 @@
       name: 'non-detections',
       marker: {
         symbol: 'triangle-down',
-        color: non_detections.map(function(nd){return nd.candidate.fid}),
-        colorway: filter_colorway,
-        opacity: 0.5
+        color: non_detections.map(function(nd){return (nd.candidate.fid - 1)/2}),
+        colorscale: filter_colorscale,
+        cmin: -0.5,
+        cmax: 2.5
       }
     });
 
@@ -222,21 +222,7 @@
       },
       xaxis:{
         title: 'date',
-      },
-      annotations: non_detections.map(function(nd) {
-        return {
-          x: jdToDate(nd.candidate.jd),
-          y: nd.candidate.diffmaglim,
-          showarrow: true,
-          arrowhead: 3,
-          arrowsize: 1.5,
-          arrowcolor: filter_colorway[nd.candidate.fid - 1][1],
-          ax: 0,
-          ay: -100,
-          yshift: -20,
-          opacity: 0.5
-        }
-      })
+      }
     }
     Plotly.newPlot('lightcurve', plot_data, layout);
   }
