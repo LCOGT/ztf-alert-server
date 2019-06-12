@@ -562,6 +562,10 @@ def apply_filters(query, request_args):
     if request_args.get('rb__gte'):
         query = query.filter(Alert.rb >= float(request_args['rb__gte']))
 
+    # Return alerts with a deep learning real/bogus score greater or equal to the given value. Ex: ?drb__gte=0.3
+    if request_args.get('drb__gte'):
+        query = query.filter(Alert.drb >= float(request_args['drb__gte']))
+
     # Return alerts with a start/galaxy score greater or equal to the given value. Ex: ?clastar__gte=0.4
     if request_args.get('classtar__gte'):
         query = query.filter(Alert.classtar >= float(request_args['classtar__gte']))
