@@ -33,12 +33,41 @@ PRODUCER_HOST = 'public.alerts.ztf.uw.edu'
 PRODUCER_PORT = '9092'
 
 
+def insert_or_update_alert(alert):
+    try:
+        existing_alert = db.session.query(Alert).filter_by(alert_candid=alert.alert_candid).limit(1)
+        if not existing_alert:
+            db.session.add(alert)
+            db.session.commit()
+            ingest_delay = datetime.now() - alert.wall_time
+            logger.info('Successfully inserted object', extra={'tags': {
+                'candid': alert.alert_candid,
+                'ingest_delay': str(ingest_delay),
+                'ingest_delay_seconds': ingest_delay.total_seconds(),
+                'successful_ingest': 'true'
+            }})
+        else:
+            logger.info('Alert already exists in database.', extra={'tags': {
+                'candid': alert.alert_candid,
+                'successful_ingest': 'false'
+            }})
+        return True
+    except exc.SQLAlchemyError as e:
+        db.session.rollback()
+        logger.warn('Failed to insert object', extra={'tags': {
+            'candid': alert.alert_candid,
+            'sql_error': e.orig.args[0],
+            'successful_ingest': 'false'
+        }})
+        return False
+
+
 def do_ingest(encoded_packet):
     f_data = base64.b64decode(encoded_packet)
     freader = fastavro.reader(io.BytesIO(f_data))
     for packet in freader:
         start_ingest = datetime.now()
-        successful_ingestion = ingest_avro(packet)
+        successful_ingestion, candid = ingest_avro(packet)
         if successful_ingestion:
             logger.info('Time to ingest avro', extra={'tags': {
                 'ingest_time': (datetime.now() - start_ingest).total_seconds()
@@ -49,6 +78,7 @@ def do_ingest(encoded_packet):
             logger.info('Time to upload avro', extra={'tags': {
                 'upload_time': (datetime.now() - start_upload).total_seconds()
             }})
+        return successful_ingestion, candid
 
 
 def ingest_avro(packet):
@@ -93,25 +123,7 @@ def ingest_avro(packet):
             gal_b=galactic.b.value,
             **packet['candidate']
             )
-        try:
-            db.session.add(alert)
-            db.session.commit()
-            ingest_delay = datetime.now() - alert.wall_time
-            logger.info('Successfully inserted object', extra={'tags': {
-                'candid': alert.alert_candid,
-                'ingest_delay': str(ingest_delay),
-                'ingest_delay_seconds': ingest_delay.total_seconds(),
-                'successful_ingest': 'true'
-            }})
-            return True
-        except exc.SQLAlchemyError as e:
-            db.session.rollback()
-            logger.warn('Failed to insert object', extra={'tags': {
-                'candid': alert.alert_candid,
-                'sql_error': e.orig.args[0],
-                'successful_ingest': 'false'
-            }})
-            return False
+        return insert_or_update_alert(alert), alert.alert_candid
 
 
 def upload_avro(f, fname, packet):
@@ -168,7 +180,8 @@ def start_consumer():
     consumer = Consumer({
         'bootstrap.servers': f'{PRODUCER_HOST}:{PRODUCER_PORT}',
         'group.id': GROUP_ID,
-        'auto.offset.reset': 'earliest'
+        'auto.offset.reset': 'earliest',
+        'queued.max.messages.kbytes': 100000
     })
     current_date = update_topic_list(consumer)
 
@@ -185,11 +198,16 @@ def start_consumer():
         process_start_time = datetime.now()
         alert = base64.b64encode(msg.value()).decode('utf-8')
         logger.info('Received alert from stream')
-        do_ingest(alert)
-        logger.info('Finished processing kafka message', extra={'tags': {
-            'record_processing_time': (datetime.now() - process_start_time).total_seconds(),
-            'processing_latency': datetime.now().timestamp() - msg.timestamp()[1]/1000
-        }})
+        success, candid = do_ingest(alert)
+        logger.info('Finished processing message from {topic} with offset {offset}'.format(
+                    topic=msg.topic() + '-' + str(msg.partition()), offset=msg.offset()),
+                    extra={'tags': {
+                                'candid': candid,
+                                'success': success,
+                                'record_processing_time': (datetime.now() - process_start_time).total_seconds(),
+                                'processing_latency': datetime.now().timestamp() - msg.timestamp()[1]/1000
+                          }}
+                    )
 
     consumer.close()
 
