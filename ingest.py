@@ -35,7 +35,7 @@ PRODUCER_PORT = '9092'
 
 def insert_or_update_alert(alert):
     try:
-        existing_alert = db.session.query(Alert).filter_by(alert_candid=alert.alert_candid).limit(1)
+        existing_alert = db.session.query(Alert).filter_by(alert_candid=alert.alert_candid).limit(1).all()
         if not existing_alert:
             db.session.add(alert)
             db.session.commit()
