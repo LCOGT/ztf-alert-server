@@ -157,7 +157,7 @@ def update_topic_list(consumer, current_topic_date=None):
     current_date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     if current_topic_date is None or (current_date - current_topic_date).days > 0:
         current_topics = []
-        for i in range(0, 7):
+        for i in range(0, 3):
             topic_date = current_date - timedelta(days=i)
             current_topics.append('ztf_{}{:02}{:02}_programid1'.format(
                 topic_date.year,
@@ -181,7 +181,8 @@ def start_consumer():
         'bootstrap.servers': f'{PRODUCER_HOST}:{PRODUCER_PORT}',
         'group.id': GROUP_ID,
         'auto.offset.reset': 'earliest',
-        'queued.max.messages.kbytes': 100000
+        'queued.max.messages.kbytes': 100000,
+        'enable.auto.commit': 'false'
     })
     current_date = update_topic_list(consumer)
 
@@ -208,6 +209,7 @@ def start_consumer():
                                 'processing_latency': datetime.now().timestamp() - msg.timestamp()[1]/1000
                           }}
                     )
+        consumer.commit(msg)
 
     consumer.close()
 
