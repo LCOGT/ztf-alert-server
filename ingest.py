@@ -173,6 +173,11 @@ def update_topic_list(consumer, current_topic_date=None):
     return current_date
 
 
+def on_commit(err, partitions):
+    if err:
+        logger.warn('Commit failed with error {error}'.format(error=str(err)))
+
+
 def start_consumer():
     logger.info('Starting consumer', extra={'tags': {
         'group_id': GROUP_ID
@@ -182,7 +187,8 @@ def start_consumer():
         'group.id': GROUP_ID,
         'auto.offset.reset': 'earliest',
         'queued.max.messages.kbytes': 100000,
-        'enable.auto.commit': 'false'
+        'enable.auto.commit': 'false',
+        'on_commit': on_commit
     })
     current_date = update_topic_list(consumer)
 
