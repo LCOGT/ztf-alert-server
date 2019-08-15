@@ -12,6 +12,7 @@ import io
 import fastavro
 import requests
 import logging
+import boto3
 from logging.config import dictConfig
 from lcogt_logging import LCOGTFormatter
 
@@ -25,7 +26,6 @@ SRID for normal sphere: https://epsg.io/4035
 EARTH_RADIUS_METERS = 6371008.77141506
 PRV_CANDIDATES_RADIUS = 0.000416667  # 1.5 arc seconds, same that ztf uses.
 FILTERS = ['g', 'r', 'i']
-S3_URL = 'https://s3-us-west-2.amazonaws.com/ztf-alert.lco.global/'
 
 DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_USER = os.getenv('DB_USER', 'ztf')
@@ -61,6 +61,22 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql+psycopg2://{DB_USER}:{DB_PA
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+def get_s3_client():
+    config = boto3.session.Config(region_name='us-west-2', signature_version='s3v4')
+    return boto3.client(
+        's3',
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+        config=config,
+    )
+
+def generate_presigned_url(key):
+    client = get_s3_client()
+    return client.generate_presigned_url(
+        'get_object',
+        ExpiresIn=3600 * 24 * 7,
+        Params={'Bucket': os.getenv('S3_BUCKET'), 'Key': key}
+    )
 
 class NonDetection(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -255,9 +271,8 @@ class Alert(db.Model):
 
     @property
     def avro(self):
-        return '{0}{1}/{2}.avro'.format(
-            S3_URL, self.wall_time_format, self.alert_candid
-        )
+        key = '{0}/{1}.avro'.format(self.wall_time_format, self.alert_candid)
+        return generate_presigned_url(key)
 
     @property
     def avro_packet(self):
