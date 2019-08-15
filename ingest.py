@@ -153,11 +153,14 @@ def packet_path(packet):
     )
 
 
+# This method was originally used to subscribe to the last 7 days of topics, updating at midnight UTC. However, due to
+# issues with offsets resetting every night, this has been reduced to a single night, and should be updated once the
+# offset issue is resolved.
 def update_topic_list(consumer, current_topic_date=None):
     current_date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     if current_topic_date is None or (current_date - current_topic_date).days > 0:
         current_topics = []
-        for i in range(0, 3):
+        for i in range(0, 1):
             topic_date = current_date - timedelta(days=i)
             current_topics.append('ztf_{}{:02}{:02}_programid1'.format(
                 topic_date.year,
