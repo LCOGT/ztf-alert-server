@@ -23,9 +23,6 @@
     <p>
     See the <a href="/help" title="help">help</a> page for descriptions of the table values and available filters.
     </p>
-    <div class="alert alert-info">
-      The ZTF survey was down for maintenance on Oct 10th, 2018 and resumed normal operations on Oct 31st, 2018. Please be aware that there are no alerts for that period of time.
-    </div>
   </div>
 </div>
 <div class="row">
@@ -257,17 +254,12 @@
     <div class="table-responsive">
       <div class="row">
         <div class="col">
-          {% if context.has_prev %}
+          {% if page > 1 %}
           <a href="/?{{ arg_str }}&page={{ page - 1 }}" class="btn btn-primary">Prev</a>
           {% else %}
           <a href="#" class="btn btn-primary disabled">Prev</a>
           {% endif %}
-          {% if context.has_next %}
           <a href="/?{{ arg_str }}&page={{ page + 1 }}" class="btn btn-primary">Next</a>
-          {% else %}
-          <a href="#" class="btn btn-primary disabled">Next</a>
-          {% endif %}
-          Results: {{ context.total }} Pages: {{ context.pages }}
         </div>
         <div class="col-md-4">
           <span class="text-right">Latest Alert: {{ latest.wall_time.strftime('%Y-%m-%d %H:%M:%S') }} UTC</span>

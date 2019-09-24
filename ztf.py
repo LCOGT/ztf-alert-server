@@ -712,7 +712,7 @@ def alerts():
         query = db.session.query(Alert)
         query = apply_filters(query, request.args)
         latest = db.session.query(Alert).order_by(Alert.jd.desc()).first()
-        paginator = query.paginate(page, 100, True)
+        paginator = query.paginate(page, 100, True, count=False)
         response = {
             'total': paginator.total,
             'pages': paginator.pages,

@@ -1,5 +1,5 @@
 flask
-flask-sqlalchemy
+https://github.com/pallets/flask-sqlalchemy/archive/7fa2ad5812edc71455934310e902bc3e43aec64c.zip
 geoalchemy2
 psycopg2-binary
 fastavro
