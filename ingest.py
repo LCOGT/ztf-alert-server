@@ -27,7 +27,8 @@ session = boto3.Session(
 s3 = session.resource('s3')
 
 # ZTF Kafka Configuration
-TOPIC = '^(ztf_[0-9]{8}_programid1)'
+ZTF_TOPIC = '^(ztf_[0-9]{8}_programid1)'
+TESS_PUBLIC_TOPIC = '^(ztf_[0-9]{8}_programid3_public)'
 GROUP_ID = os.getenv('GROUP_ID', default='LCOGT-test')
 PRODUCER_HOST = 'public.alerts.ztf.uw.edu'
 PRODUCER_PORT = '9092'
@@ -166,7 +167,12 @@ def update_topic_list(consumer, current_topic_date=None):
                 topic_date.year,
                 topic_date.month,
                 topic_date.day
-            ))
+            ))  # Add ZTF topics
+            current_topics.append('ztf_{}{:02}{:02}_programid3_public'.format(
+                topic_date.year,
+                topic_date.month,
+                topic_date.day
+            ))  # Add TESS public topics
         consumer.subscribe(current_topics)
 
         logger.info('New topics', extra={'tags': {
