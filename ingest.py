@@ -167,12 +167,12 @@ def update_topic_list(consumer, current_topic_date=None):
                 topic_date.year,
                 topic_date.month,
                 topic_date.day
-            )) # Add ZTF topics
+            ))  # Add ZTF topics
             current_topics.append('ztf_{}{:02}{:02}_programid3_public'.format(
                 topic_date.year,
                 topic_date.month,
                 topic_date.day
-            )) # Add TESS public topics
+            ))  # Add TESS public topics
         consumer.subscribe(current_topics)
 
         logger.info('New topics', extra={'tags': {
