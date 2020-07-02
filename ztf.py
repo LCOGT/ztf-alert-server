@@ -453,7 +453,7 @@ class Alert(db.Model):
             index += 1
         photometry[index] = {
             'jd': self.jd,
-            'filter': filter_mapping[self.fid],
+            'filter': filter_mapping[self.fid - 1],
             'magpsf': self.magpsf,
             'sigmapsf': self.sigmapsf,
             'diffmaglim': self.diffmaglim
