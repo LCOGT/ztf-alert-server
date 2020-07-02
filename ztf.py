@@ -449,7 +449,7 @@ class Alert(db.Model):
                 if key in ['jd', 'diffmaglim', 'magpsf', 'sigmapsf']:
                     photometry[index][key] = values[key]
                 elif key == 'fid':
-                    photometry[index]['filter'] = filter_mapping[values[key]]
+                    photometry[index]['filter'] = filter_mapping[values[key] - 1]
             index += 1
         photometry[index] = {
             'jd': self.jd,
