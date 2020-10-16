@@ -488,6 +488,12 @@ def apply_filters(query, request_args):
             Alert.location.ST_DWithin(f'srid=4035;POINT({ra} {dec})', degrees_to_meters(float(radius)))
         )
 
+    if request_args.get('polygon'):
+        vertices, radius = request_args['polygon'].rsplit(', ', 1)
+        query = query.filter(
+            Alert.location.ST_DWithin(f'srid=4035;POLYGON(({vertices}))', degrees_to_meters(float(radius)))
+        )
+
     if request_args.get('objectcone'):
         objectname, radius = request_args['objectcone'].split(',')
         ra, dec = get_simbad2k_coords(objectname)

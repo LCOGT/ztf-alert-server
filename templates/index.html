@@ -115,6 +115,12 @@
       </div>
 
       <div class="form-group">
+        <label for="polygon">Polygon Search</label>
+        <input type="text" class="form-control form-control-sm" id="polygon" name="polygon" value="{{ request.args.polygon }}">
+        <small class="form-text text-muted">Format: comma-separated vertices in degrees.</small>
+      </div>
+
+      <div class="form-group">
         <label for="objectidps">Nearby Objects</label>
         <input type="text" class="form-control form-control-sm" id="objectidps" name="objectidps" value="{{ request.args.objectidps }}">
         <small class="form-text text-muted">ID from PS1 catalog.</small>
