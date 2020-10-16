@@ -6,6 +6,7 @@ import os
 import base64
 import time
 from datetime import datetime, timedelta
+from enum import Enum
 from confluent_kafka import Consumer
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
@@ -34,6 +35,15 @@ PRODUCER_HOST = 'public.alerts.ztf.uw.edu'
 PRODUCER_PORT = '9092'
 
 
+class IngestionStatus(Enum):
+    SUCCESS = 1
+    DUPLICATE = 2
+    FAILED = 3
+
+    def not_failed(self):
+        return self in [self.SUCCESS, self.DUPLICATE]
+
+
 def insert_or_update_alert(alert):
     try:
         existing_alert = db.session.query(Alert).filter_by(alert_candid=alert.alert_candid).limit(1).all()
@@ -47,12 +57,13 @@ def insert_or_update_alert(alert):
                 'ingest_delay_seconds': ingest_delay.total_seconds(),
                 'successful_ingest': 'true'
             }})
+            return IngestionStatus.SUCCESS
         else:
             logger.info('Alert already exists in database.', extra={'tags': {
                 'candid': alert.alert_candid,
                 'successful_ingest': 'false'
             }})
-        return True
+        return IngestionStatus.DUPLICATE
     except exc.SQLAlchemyError as e:
         db.session.rollback()
         logger.warn('Failed to insert object', extra={'tags': {
@@ -60,7 +71,7 @@ def insert_or_update_alert(alert):
             'sql_error': e.orig.args[0],
             'successful_ingest': 'false'
         }})
-        return False
+        return IngestionStatus.FAILED
 
 
 def do_ingest(encoded_packet):
@@ -68,8 +79,8 @@ def do_ingest(encoded_packet):
     freader = fastavro.reader(io.BytesIO(f_data))
     for packet in freader:
         start_ingest = datetime.now()
-        successful_ingestion, candid = ingest_avro(packet)
-        if successful_ingestion:
+        ingestion_status, candid = ingest_avro(packet)
+        if ingestion_status == IngestionStatus.SUCCESS:
             logger.info('Time to ingest avro', extra={'tags': {
                 'ingest_time': (datetime.now() - start_ingest).total_seconds()
             }})
@@ -79,7 +90,7 @@ def do_ingest(encoded_packet):
             logger.info('Time to upload avro', extra={'tags': {
                 'upload_time': (datetime.now() - start_upload).total_seconds()
             }})
-        return successful_ingestion, candid
+        return ingestion_status.not_failed(), candid
 
 
 def ingest_avro(packet):
@@ -161,7 +172,7 @@ def update_topic_list(consumer, current_topic_date=None):
     current_date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     if current_topic_date is None or (current_date - current_topic_date).days > 0:
         current_topics = []
-        for i in range(0, 1):
+        for i in range(0, 7):
             topic_date = current_date - timedelta(days=i)
             current_topics.append('ztf_{}{:02}{:02}_programid1'.format(
                 topic_date.year,
