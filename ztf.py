@@ -79,7 +79,7 @@ def generate_presigned_url(key):
     )
 
 class NonDetection(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.BigInteger, primary_key=True)
     objectId = db.Column(db.String(50), index=True)
     diffmaglim = db.Column(db.Float, nullable=False)
     jd = db.Column(db.Float, nullable=False, index=True)
