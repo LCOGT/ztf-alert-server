@@ -1,0 +1,25 @@
+BEGIN;
+ALTER TABLE alert
+ADD COLUMN new_id bigint;
+CREATE INDEX alert_new_pkey
+ON alert USING btree(new_id);
+UPDATE alert
+SET new_id = id;
+END;
+
+
+BEGIN;
+ALTER TABLE alert
+DROP INDEX alert_pkey;
+ALTER TABLE alert
+DROP CONSTRAINT id;
+ALTER TABLE alert
+DROP COLUMN id;
+ALTER TABLE alert
+RENAME COLUMN new_id to id;
+ALTER TABLE alert
+RENAME INDEX alert_new_pkey to alert_pkey;
+ALTER TABLE alert
+ADD CONSTRAINT id
+PRIMARY KEY USING INDEX alert_pkey;
+END;
