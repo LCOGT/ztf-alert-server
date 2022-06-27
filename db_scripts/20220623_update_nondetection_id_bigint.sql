@@ -1,7 +1,7 @@
 BEGIN;
 -- before we create the new bigint column (new_id) and specify the PK sequence
 -- we need to tell the sequence that it must be a bigint now..
-ALTER SEQUENCE non_detection_id_seq AS bitint;
+ALTER SEQUENCE non_detection_id_seq AS bigint;
 -- bigint default nextval() is equivalent to BIGSERIAL and we will be recycling the old sequence
 ALTER TABLE non_detection ADD COLUMN new_id bigint default nextval('non_detection_id_seq');
 -- change ownership of this sequence to the new_id (the new PK)
