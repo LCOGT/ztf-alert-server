@@ -38,11 +38,6 @@ def read_avros(url):
             }})
 
 
-def error_callback(exc):
-    logger.error(f'Got error {exc}')
-    pass
-
-
 if __name__ == '__main__':
     db.create_all()
     start_date = datetime.strptime(sys.argv[1], '%Y%m%d')
@@ -50,5 +45,7 @@ if __name__ == '__main__':
     with multiprocessing.Pool(processes=NUM_WORKER_PROCESSES) as pool:
         for i in range(0, (end_date - start_date).days + 1):
             url = get_ztf_url(start_date + timedelta(days=i))
-            pool.apply_async(read_avros, (url,), error_callback=error_callback)
-
+            pool.apply_async(read_avros, (url,))
+        
+        pool.close()
+        pool.join()
