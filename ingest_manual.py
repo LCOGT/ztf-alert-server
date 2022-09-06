@@ -4,6 +4,7 @@ import base64
 from datetime import datetime, timedelta
 import multiprocessing
 import os
+import traceback
 
 import requests
 
@@ -12,7 +13,7 @@ from ztf import db, logger
 
 
 ZTF_ALERT_ARCHIVE = 'https://ztf.uw.edu/alerts/public/'
-NUM_WORKER_PROCESSES = os.getenv('NUM_WORKER_PROCESSES', 1)
+NUM_WORKER_PROCESSES = int(os.getenv('NUM_WORKER_PROCESSES', 1))
 
 def get_ztf_url(date):
     return '{0}ztf_public_{1}.tar.gz'.format(ZTF_ALERT_ARCHIVE, datetime.strftime(date, '%Y%m%d'))
@@ -32,8 +33,8 @@ def read_avros(url):
                             fencoded = base64.b64encode(f.read()).decode('UTF-8')
                             do_ingest(fencoded)
                 logger.info('done sending tasks', extra={'tags': {'processed_tarfile': url}})
-        except Exception as e:
-            logger.error('Error ingesting tarball', extra={'tags': {
+        except Exception:
+            logger.error(f'Error ingesting tarball: {traceback.print_exc()}', extra={'tags': {
                 'tarfile': url
             }})
 
